@@ -57,15 +57,13 @@ public final class CompletionEngine {
                                 .orElse(null)
                         : null;
 
-                List<OperatorDefinition> applicable = fieldType != null
-                        ? ops.applicableTo(fieldType, fieldFormat)
-                        : ops.all();
+                List<OperatorDefinition> applicable =
+                        fieldType != null ? ops.applicableTo(fieldType, fieldFormat) : ops.all();
 
                 List<String> candidates = new ArrayList<>();
                 applicable.stream()
                         .filter(op -> op.getSyntax() == Syntax.INFIX)
-                        .flatMap(op -> Stream.concat(
-                                Stream.of(op.getCanonicalName()), op.getAliases().stream()))
+                        .flatMap(op -> Stream.concat(Stream.of(op.getCanonicalName()), op.getAliases().stream()))
                         .forEach(candidates::add);
                 candidates.add("meets");
                 yield candidates;
@@ -83,9 +81,8 @@ public final class CompletionEngine {
                                 .orElse(null)
                         : null;
 
-                List<OperatorDefinition> applicable = fieldType != null
-                        ? ops.applicableTo(fieldType, fieldFormat)
-                        : ops.all();
+                List<OperatorDefinition> applicable =
+                        fieldType != null ? ops.applicableTo(fieldType, fieldFormat) : ops.all();
 
                 yield applicable.stream()
                         .filter(op -> op.getSyntax() == Syntax.FUNCTION)
@@ -118,8 +115,7 @@ public final class CompletionEngine {
         };
     }
 
-    private List<String> callCompletionProvider(
-            String fieldPath, OperatorDefinition op, String partial) {
+    private List<String> callCompletionProvider(String fieldPath, OperatorDefinition op, String partial) {
         return fields.find(fieldPath)
                 .filter(f -> f.getCompletionProvider() != null)
                 .map(f -> f.getCompletionProvider()

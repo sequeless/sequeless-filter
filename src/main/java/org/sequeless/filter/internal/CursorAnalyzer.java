@@ -20,10 +20,7 @@ public final class CursorAnalyzer {
     private CursorAnalyzer() {}
 
     public static CompletionHint analyze(
-            List<Token> tokens,
-            int cursorOffset,
-            OperatorRegistry ops,
-            FieldRegistry fields) {
+            List<Token> tokens, int cursorOffset, OperatorRegistry ops, FieldRegistry fields) {
 
         State state = State.START;
         String currentField = null;
@@ -51,7 +48,8 @@ public final class CursorAnalyzer {
         // Trailing-whitespace advancement: if the cursor is after the last token, the user has
         // finished typing that token and is ready for the next one.
         boolean trailingSpace = lastToken != null
-                && cursorOffset > lastToken.getStartIndex() + lastToken.getText().length();
+                && cursorOffset
+                        > lastToken.getStartIndex() + lastToken.getText().length();
 
         if (trailingSpace) {
             state = advanceOnTrailingSpace(state, opTokens, ops);
@@ -176,8 +174,7 @@ public final class CursorAnalyzer {
                 inPath = true;
             } else if (inPath && type == FilterParser.DOT) {
                 sb.append('.');
-            } else if (inPath && type == FilterParser.WORD && sb.length() > 0
-                    && sb.charAt(sb.length() - 1) == '.') {
+            } else if (inPath && type == FilterParser.WORD && sb.length() > 0 && sb.charAt(sb.length() - 1) == '.') {
                 sb.append(t.getText());
             } else if (inPath) {
                 break;
@@ -197,11 +194,7 @@ public final class CursorAnalyzer {
     }
 
     private static CompletionHint buildHint(
-            State state,
-            String field,
-            List<Token> opTokens,
-            int cursorOffset,
-            OperatorRegistry ops) {
+            State state, String field, List<Token> opTokens, int cursorOffset, OperatorRegistry ops) {
 
         return switch (state) {
             case START, IN_PATH, IN_PATH_DOT -> CompletionHint.builder()

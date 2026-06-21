@@ -20,18 +20,14 @@ public final class FilterValidator {
      * @param fields  field registry
      * @return immutable list of violations; empty if the filter is valid
      */
-    public static List<FilterViolation> validate(
-            FilterNode node, OperatorRegistry ops, FieldRegistry fields) {
+    public static List<FilterViolation> validate(FilterNode node, OperatorRegistry ops, FieldRegistry fields) {
         List<FilterViolation> violations = new ArrayList<>();
         validateNode(node, ops, fields, violations);
         return List.copyOf(violations);
     }
 
     private static void validateNode(
-            FilterNode node,
-            OperatorRegistry ops,
-            FieldRegistry fields,
-            List<FilterViolation> violations) {
+            FilterNode node, OperatorRegistry ops, FieldRegistry fields, List<FilterViolation> violations) {
         switch (node) {
             case FieldFilter f -> validateField(f, ops, fields, violations);
             case AnyFilter a -> validateAny(a, ops, violations);
@@ -41,10 +37,7 @@ public final class FilterValidator {
     }
 
     private static void validateField(
-            FieldFilter f,
-            OperatorRegistry ops,
-            FieldRegistry fields,
-            List<FilterViolation> violations) {
+            FieldFilter f, OperatorRegistry ops, FieldRegistry fields, List<FilterViolation> violations) {
 
         if (!fields.isPermissive() && fields.find(f.path()).isEmpty()) {
             violations.add(new FilterViolation(f.path(), "Unknown field: '" + f.path() + "'"));
@@ -58,24 +51,20 @@ public final class FilterValidator {
         }
 
         fields.find(f.path()).ifPresent(fieldDef -> {
-            if (!op.getApplicableTypes().isEmpty()
-                    && !op.getApplicableTypes().contains(fieldDef.getJsonSchemaType())) {
+            if (!op.getApplicableTypes().isEmpty() && !op.getApplicableTypes().contains(fieldDef.getJsonSchemaType())) {
                 violations.add(new FilterViolation(
                         f.path(),
-                        "Operator '" + f.op() + "' is not applicable to type '"
-                                + fieldDef.getJsonSchemaType() + "'"));
+                        "Operator '" + f.op() + "' is not applicable to type '" + fieldDef.getJsonSchemaType() + "'"));
             }
             if (!fieldDef.getPermittedOperators().isEmpty()
                     && !fieldDef.getPermittedOperators().contains(f.op())) {
                 violations.add(new FilterViolation(
-                        f.path(), "Operator '" + f.op() + "' is not permitted for field '"
-                                + f.path() + "'"));
+                        f.path(), "Operator '" + f.op() + "' is not permitted for field '" + f.path() + "'"));
             }
         });
     }
 
-    private static void validateAny(
-            AnyFilter a, OperatorRegistry ops, List<FilterViolation> violations) {
+    private static void validateAny(AnyFilter a, OperatorRegistry ops, List<FilterViolation> violations) {
         if (ops.findByCanonicalOrAlias(a.op()).isEmpty()) {
             violations.add(new FilterViolation(null, "Unknown operator in AnyFilter: '" + a.op() + "'"));
         }

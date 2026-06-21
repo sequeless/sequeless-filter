@@ -10,7 +10,7 @@ import org.sequeless.filter.api.OperatorRegistry;
 import org.sequeless.filter.spi.OperatorContributor;
 
 /** Default {@link OperatorRegistry} implementation. Fails fast on duplicate names or aliases. */
-public class DefaultOperatorRegistry implements OperatorRegistry {
+public final class DefaultOperatorRegistry implements OperatorRegistry {
 
     private final List<OperatorDefinition> ordered;
     private final Map<String, OperatorDefinition> index;
@@ -33,9 +33,8 @@ public class DefaultOperatorRegistry implements OperatorRegistry {
     private void register(String name, OperatorDefinition op) {
         if (index.containsKey(name)) {
             OperatorDefinition existing = index.get(name);
-            throw new IllegalArgumentException(
-                    "Duplicate operator name or alias '" + name + "': defined by '"
-                            + existing.getCanonicalName() + "' and '" + op.getCanonicalName() + "'");
+            throw new IllegalArgumentException("Duplicate operator name or alias '" + name + "': defined by '"
+                    + existing.getCanonicalName() + "' and '" + op.getCanonicalName() + "'");
         }
         index.put(name, op);
     }

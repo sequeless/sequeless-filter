@@ -8,12 +8,10 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.sequeless.filter.api.AnyFilter;
 import org.sequeless.filter.api.AndFilter;
+import org.sequeless.filter.api.AnyFilter;
 import org.sequeless.filter.api.FieldFilter;
 import org.sequeless.filter.api.FieldRegistry;
 import org.sequeless.filter.api.FilterNode;
@@ -21,7 +19,6 @@ import org.sequeless.filter.api.FilterParseException;
 import org.sequeless.filter.api.OperatorDefinition;
 import org.sequeless.filter.api.OperatorRegistry;
 import org.sequeless.filter.api.OrFilter;
-import org.sequeless.filter.api.ParameterType;
 import org.sequeless.filter.api.Syntax;
 import org.sequeless.filter.internal.parser.FilterBaseVisitor;
 import org.sequeless.filter.internal.parser.FilterParser;
@@ -123,14 +120,12 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
                     ctx.WORD().getSymbol().getStartIndex());
         }
 
-        List<JsonNode> args = ctx.argList() != null
-                ? convertArgList(ctx.argList())
-                : List.of();
+        List<JsonNode> args = ctx.argList() != null ? convertArgList(ctx.argList()) : List.of();
 
         if (args.size() != op.getParameters().size()) {
             throw new FilterParseException(
-                    "Operator '" + op.getCanonicalName() + "' expects " + op.getParameters().size()
-                            + " argument(s) but got " + args.size(),
+                    "Operator '" + op.getCanonicalName() + "' expects "
+                            + op.getParameters().size() + " argument(s) but got " + args.size(),
                     ctx.getStart().getStartIndex());
         }
 
@@ -146,8 +141,7 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
         return buildCondition(ctx.fieldOrAny(), op.getCanonicalName(), argArray);
     }
 
-    private FilterNode buildCondition(
-            FilterParser.FieldOrAnyContext fieldOrAny, String canonicalOp, JsonNode value) {
+    private FilterNode buildCondition(FilterParser.FieldOrAnyContext fieldOrAny, String canonicalOp, JsonNode value) {
         if (fieldOrAny instanceof FieldTargetContext ftc) {
             String path = resolvePath(ftc.path());
             return new FieldFilter(path, canonicalOp, value);
@@ -157,14 +151,11 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
     }
 
     private String resolvePath(FilterParser.PathContext ctx) {
-        String path = ctx.WORD().stream()
-                .map(TerminalNode::getText)
-                .collect(Collectors.joining("."));
+        String path = ctx.WORD().stream().map(TerminalNode::getText).collect(Collectors.joining("."));
 
         if (!fields.isPermissive() && fields.find(path).isEmpty()) {
             throw new FilterParseException(
-                    "Unknown field path: '" + path + "'",
-                    ctx.getStart().getStartIndex());
+                    "Unknown field path: '" + path + "'", ctx.getStart().getStartIndex());
         }
         return path;
     }
@@ -177,8 +168,7 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
 
         return ops.findByCanonicalOrAlias(phrase)
                 .orElseThrow(() -> new FilterParseException(
-                        "Unknown operator: '" + phrase + "'",
-                        ctx.getStart().getStartIndex()));
+                        "Unknown operator: '" + phrase + "'", ctx.getStart().getStartIndex()));
     }
 
     private JsonNode convertValue(ValueContext ctx) {
@@ -220,10 +210,7 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
     }
 
     private void validateArg(
-            ArgContext argCtx,
-            org.sequeless.filter.api.ParameterDefinition param,
-            String opName,
-            int index) {
+            ArgContext argCtx, org.sequeless.filter.api.ParameterDefinition param, String opName, int index) {
         boolean isString = argCtx.STRING() != null || argCtx.WORD() != null;
         boolean isNumber = argCtx.NUMBER() != null;
 
@@ -257,8 +244,8 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
                                 : null);
                 if (val == null || !param.getAllowedValues().contains(val)) {
                     throw new FilterParseException(
-                            "Argument " + index + " of '" + opName + "' must be one of "
-                                    + param.getAllowedValues() + " but was '" + val + "'",
+                            "Argument " + index + " of '" + opName + "' must be one of " + param.getAllowedValues()
+                                    + " but was '" + val + "'",
                             argCtx.getStart().getStartIndex());
                 }
             }

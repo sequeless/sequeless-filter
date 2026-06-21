@@ -14,10 +14,8 @@ public final class PermissiveFieldRegistry implements FieldRegistry {
 
     public static final PermissiveFieldRegistry INSTANCE = new PermissiveFieldRegistry();
 
-    private static final FieldDefinition WILDCARD = FieldDefinition.builder()
-            .path("*")
-            .jsonSchemaType("string")
-            .build();
+    private static final FieldDefinition WILDCARD =
+            FieldDefinition.builder().path("*").jsonSchemaType("string").build();
 
     private PermissiveFieldRegistry() {}
 

@@ -33,8 +33,7 @@ public final class FilterSchemaProvider {
     public List<OperatorDefinition> availableOperators(String fieldPath) {
         return fields.find(fieldPath)
                 .map(f -> {
-                    List<OperatorDefinition> byType =
-                            ops.applicableTo(f.getJsonSchemaType(), f.getJsonSchemaFormat());
+                    List<OperatorDefinition> byType = ops.applicableTo(f.getJsonSchemaType(), f.getJsonSchemaFormat());
                     if (f.getPermittedOperators().isEmpty()) {
                         return byType;
                     }

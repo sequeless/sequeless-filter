@@ -39,8 +39,7 @@ public class BuiltinOperatorContributor implements OperatorContributor {
                 .build();
     }
 
-    private static OperatorDefinition unary(
-            String canonical, List<String> aliases, List<String> types) {
+    private static OperatorDefinition unary(String canonical, List<String> aliases, List<String> types) {
         return OperatorDefinition.builder()
                 .canonicalName(canonical)
                 .aliases(aliases)

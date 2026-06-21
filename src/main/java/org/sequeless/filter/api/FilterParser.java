@@ -55,8 +55,7 @@ public final class FilterParser {
      * @param ops          operator registry
      * @param fields       field registry
      */
-    public static ParseResult parsePartial(
-            String input, int cursorOffset, OperatorRegistry ops, FieldRegistry fields) {
+    public static ParseResult parsePartial(String input, int cursorOffset, OperatorRegistry ops, FieldRegistry fields) {
         try {
             FilterNode ast = parse(input, ops, fields);
             // If the cursor is at or past the end of the meaningful input, the user may want to

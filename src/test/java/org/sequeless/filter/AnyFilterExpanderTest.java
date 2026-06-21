@@ -31,8 +31,10 @@ class AnyFilterExpanderTest {
     void setUp() {
         FieldDefinition name =
                 FieldDefinition.builder().path("name").jsonSchemaType("string").build();
-        FieldDefinition description =
-                FieldDefinition.builder().path("description").jsonSchemaType("string").build();
+        FieldDefinition description = FieldDefinition.builder()
+                .path("description")
+                .jsonSchemaType("string")
+                .build();
         FieldDefinition age =
                 FieldDefinition.builder().path("age").jsonSchemaType("number").build();
 
@@ -49,8 +51,7 @@ class AnyFilterExpanderTest {
         OrFilter or = (OrFilter) expanded;
         // 'name' and 'description' are string fields compatible with 'contains'; 'age' is not
         assertThat(or.operands()).hasSize(2);
-        assertThat(or.operands())
-                .allSatisfy(n -> assertThat(n).isInstanceOf(FieldFilter.class));
+        assertThat(or.operands()).allSatisfy(n -> assertThat(n).isInstanceOf(FieldFilter.class));
         assertThat(or.operands())
                 .extracting(n -> ((FieldFilter) n).path())
                 .containsExactlyInAnyOrder("name", "description");
@@ -63,16 +64,15 @@ class AnyFilterExpanderTest {
                 Filters.field("age", "is greater than", JsonNodeFactory.instance.numberNode(18)));
 
         FilterNode expanded = AnyFilterExpander.expand(and, fields, ops);
-        assertThat(expanded).isInstanceOfSatisfying(
-                org.sequeless.filter.api.AndFilter.class,
-                a -> assertThat(a.operands().get(0)).isInstanceOf(OrFilter.class));
+        assertThat(expanded).isInstanceOfSatisfying(org.sequeless.filter.api.AndFilter.class, a -> assertThat(
+                        a.operands().get(0))
+                .isInstanceOf(OrFilter.class));
     }
 
     @Test
     void customStrategyIsInvoked() {
         AnyExpansionStrategy strategy = mock(AnyExpansionStrategy.class);
-        FilterNode mockResult =
-                Filters.field("name", "contains", JsonNodeFactory.instance.textNode("foo"));
+        FilterNode mockResult = Filters.field("name", "contains", JsonNodeFactory.instance.textNode("foo"));
         when(strategy.expand(any(AnyFilter.class), anyList())).thenReturn(mockResult);
 
         AnyFilter any = new AnyFilter("contains", JsonNodeFactory.instance.textNode("foo"));

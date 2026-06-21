@@ -54,9 +54,7 @@ class FilterSchemaProviderTest {
                 .extracting(OperatorDefinition::getCanonicalName)
                 .contains("contains", "starts with", "is", "is not");
         // numeric-only ops should not appear for string field
-        assertThat(statusOps)
-                .extracting(OperatorDefinition::getCanonicalName)
-                .doesNotContain("is greater than");
+        assertThat(statusOps).extracting(OperatorDefinition::getCanonicalName).doesNotContain("is greater than");
     }
 
     @Test
@@ -70,8 +68,7 @@ class FilterSchemaProviderTest {
     @Test
     void suggestValuesDelegatesToCompletionProvider() {
         CompletionProvider mockProvider = mock(CompletionProvider.class);
-        when(mockProvider.complete(any(CompletionContext.class)))
-                .thenReturn(List.of("active", "pending"));
+        when(mockProvider.complete(any(CompletionContext.class))).thenReturn(List.of("active", "pending"));
 
         FieldDefinition statusWithProvider = FieldDefinition.builder()
                 .path("status")

@@ -5,9 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
-import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.sequeless.filter.api.FieldFilter;
 import org.sequeless.filter.api.FieldRegistry;
 import org.sequeless.filter.api.FilterNode;
 import org.sequeless.filter.api.FilterParser;
@@ -40,8 +38,8 @@ class FilterSerializerTest {
     @Test
     void roundTripsGteWithKeywordInCanonical() {
         // "is greater than or equal to" contains 'or' — serializer must use '>=' alias
-        FilterNode original = Filters.field("qty", "is greater than or equal to",
-                JsonNodeFactory.instance.numberNode(10));
+        FilterNode original =
+                Filters.field("qty", "is greater than or equal to", JsonNodeFactory.instance.numberNode(10));
         String serialized = FilterSerializer.serialize(original, OPS);
         assertThat(serialized).contains(">=");
         assertThat(roundTrip(original)).isEqualTo(original);
@@ -49,8 +47,7 @@ class FilterSerializerTest {
 
     @Test
     void roundTripsLteWithKeywordInCanonical() {
-        FilterNode original = Filters.field("qty", "is less than or equal to",
-                JsonNodeFactory.instance.numberNode(10));
+        FilterNode original = Filters.field("qty", "is less than or equal to", JsonNodeFactory.instance.numberNode(10));
         String serialized = FilterSerializer.serialize(original, OPS);
         assertThat(serialized).contains("<=");
         assertThat(roundTrip(original)).isEqualTo(original);
@@ -94,8 +91,7 @@ class FilterSerializerTest {
 
     @Test
     void serializesStringWithEmbeddedSingleQuote() {
-        FilterNode original = Filters.field("note", "contains",
-                JsonNodeFactory.instance.textNode("it's fine"));
+        FilterNode original = Filters.field("note", "contains", JsonNodeFactory.instance.textNode("it's fine"));
         String serialized = FilterSerializer.serialize(original, OPS);
         assertThat(serialized).contains("'it''s fine'");
         assertThat(roundTrip(original)).isEqualTo(original);
@@ -122,9 +118,7 @@ class FilterSerializerTest {
         FilterNode orNode = Filters.or(
                 Filters.field("a", "is", JsonNodeFactory.instance.textNode("x")),
                 Filters.field("b", "is", JsonNodeFactory.instance.textNode("y")));
-        FilterNode andNode = Filters.and(
-                orNode,
-                Filters.field("c", "is", JsonNodeFactory.instance.textNode("z")));
+        FilterNode andNode = Filters.and(orNode, Filters.field("c", "is", JsonNodeFactory.instance.textNode("z")));
         String serialized = FilterSerializer.serialize(andNode, OPS);
         assertThat(serialized).startsWith("(");
     }
@@ -140,29 +134,25 @@ class FilterSerializerTest {
 
     @Test
     void roundTripsContains() {
-        FilterNode original = Filters.field("name", "contains",
-                JsonNodeFactory.instance.textNode("foo"));
+        FilterNode original = Filters.field("name", "contains", JsonNodeFactory.instance.textNode("foo"));
         assertThat(roundTrip(original)).isEqualTo(original);
     }
 
     @Test
     void roundTripsStartsWith() {
-        FilterNode original = Filters.field("name", "starts with",
-                JsonNodeFactory.instance.textNode("foo"));
+        FilterNode original = Filters.field("name", "starts with", JsonNodeFactory.instance.textNode("foo"));
         assertThat(roundTrip(original)).isEqualTo(original);
     }
 
     @Test
     void roundTripsIsLike() {
-        FilterNode original = Filters.field("name", "is like",
-                JsonNodeFactory.instance.textNode("foo%"));
+        FilterNode original = Filters.field("name", "is like", JsonNodeFactory.instance.textNode("foo%"));
         assertThat(roundTrip(original)).isEqualTo(original);
     }
 
     @Test
     void roundTripsIsNotLike() {
-        FilterNode original = Filters.field("name", "is not like",
-                JsonNodeFactory.instance.textNode("foo%"));
+        FilterNode original = Filters.field("name", "is not like", JsonNodeFactory.instance.textNode("foo%"));
         assertThat(roundTrip(original)).isEqualTo(original);
     }
 }

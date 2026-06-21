@@ -33,4 +33,14 @@ public class FieldDefinition {
      * May be {@code null} when the embedder does not need value suggestions for this field.
      */
     CompletionProvider completionProvider;
+
+    /** Defensive-copy override for the Lombok-generated builder setter. */
+    public static class FieldDefinitionBuilder {
+
+        public FieldDefinitionBuilder permittedOperators(List<String> permittedOperators) {
+            this.permittedOperators$value = List.copyOf(permittedOperators);
+            this.permittedOperators$set = true;
+            return this;
+        }
+    }
 }

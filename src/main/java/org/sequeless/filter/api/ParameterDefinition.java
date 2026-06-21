@@ -19,4 +19,14 @@ public class ParameterDefinition {
     /** Non-empty only when {@code type == ENUM}; lists the accepted literal values. */
     @Builder.Default
     List<String> allowedValues = List.of();
+
+    /** Defensive-copy override for the Lombok-generated builder setter. */
+    public static class ParameterDefinitionBuilder {
+
+        public ParameterDefinitionBuilder allowedValues(List<String> allowedValues) {
+            this.allowedValues$value = List.copyOf(allowedValues);
+            this.allowedValues$set = true;
+            return this;
+        }
+    }
 }

@@ -44,4 +44,32 @@ public class OperatorDefinition {
     /** Non-empty only for {@link Syntax#FUNCTION} operators. */
     @Builder.Default
     List<ParameterDefinition> parameters = List.of();
+
+    /** Defensive-copy overrides for the Lombok-generated builder setters. */
+    public static class OperatorDefinitionBuilder {
+
+        public OperatorDefinitionBuilder aliases(List<String> aliases) {
+            this.aliases$value = List.copyOf(aliases);
+            this.aliases$set = true;
+            return this;
+        }
+
+        public OperatorDefinitionBuilder applicableTypes(List<String> applicableTypes) {
+            this.applicableTypes$value = List.copyOf(applicableTypes);
+            this.applicableTypes$set = true;
+            return this;
+        }
+
+        public OperatorDefinitionBuilder applicableFormats(List<String> applicableFormats) {
+            this.applicableFormats$value = List.copyOf(applicableFormats);
+            this.applicableFormats$set = true;
+            return this;
+        }
+
+        public OperatorDefinitionBuilder parameters(List<ParameterDefinition> parameters) {
+            this.parameters$value = List.copyOf(parameters);
+            this.parameters$set = true;
+            return this;
+        }
+    }
 }

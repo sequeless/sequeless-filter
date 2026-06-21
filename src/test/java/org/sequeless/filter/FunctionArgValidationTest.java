@@ -29,7 +29,10 @@ class FunctionArgValidationTest {
                 .applicableTypes(List.of("string"))
                 .applicableFormats(List.of("date-time"))
                 .parameters(List.of(
-                        ParameterDefinition.builder().name("amount").type(ParameterType.INT).build(),
+                        ParameterDefinition.builder()
+                                .name("amount")
+                                .type(ParameterType.INT)
+                                .build(),
                         ParameterDefinition.builder()
                                 .name("unit")
                                 .type(ParameterType.ENUM)
@@ -57,16 +60,14 @@ class FunctionArgValidationTest {
 
     @Test
     void wrongArgTypeThrowsForIntParam() {
-        assertThatThrownBy(
-                        () -> FilterParser.parse("createdAt meets withinLast('seven', days)", ops, fields))
+        assertThatThrownBy(() -> FilterParser.parse("createdAt meets withinLast('seven', days)", ops, fields))
                 .isInstanceOf(FilterParseException.class)
                 .hasMessageContaining("integer");
     }
 
     @Test
     void invalidEnumValueThrows() {
-        assertThatThrownBy(
-                        () -> FilterParser.parse("createdAt meets withinLast(7, weeks)", ops, fields))
+        assertThatThrownBy(() -> FilterParser.parse("createdAt meets withinLast(7, weeks)", ops, fields))
                 .isInstanceOf(FilterParseException.class)
                 .hasMessageContaining("weeks");
     }

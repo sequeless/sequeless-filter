@@ -14,8 +14,14 @@ class RegistryConflictTest {
     @Test
     void duplicateCanonicalNameThrows() {
         OperatorContributor contrib = () -> List.of(
-                OperatorDefinition.builder().canonicalName("is").syntax(Syntax.INFIX).build(),
-                OperatorDefinition.builder().canonicalName("is").syntax(Syntax.INFIX).build());
+                OperatorDefinition.builder()
+                        .canonicalName("is")
+                        .syntax(Syntax.INFIX)
+                        .build(),
+                OperatorDefinition.builder()
+                        .canonicalName("is")
+                        .syntax(Syntax.INFIX)
+                        .build());
 
         assertThatThrownBy(() -> OperatorRegistry.of(List.of(contrib)))
                 .isInstanceOf(IllegalArgumentException.class)

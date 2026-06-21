@@ -41,8 +41,7 @@ public class DefaultFieldRegistry implements FieldRegistry {
                 .toList();
     }
 
-    private static boolean isCompatible(
-            FieldDefinition field, String canonicalOperator, OperatorRegistry operators) {
+    private static boolean isCompatible(FieldDefinition field, String canonicalOperator, OperatorRegistry operators) {
         List<String> permitted = field.getPermittedOperators();
         if (!permitted.isEmpty()) {
             return permitted.contains(canonicalOperator);
