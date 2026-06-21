@@ -3,7 +3,7 @@ grammar Filter;
 filter       : disjunction EOF ;
 disjunction  : conjunction ( OR conjunction )* ;
 conjunction  : primary ( AND primary )* ;
-primary      : LPAREN filter RPAREN | condition ;
+primary      : LPAREN disjunction RPAREN | condition ;
 
 condition    : fieldOrAny MEETS WORD LPAREN argList? RPAREN  # FunctionCondition
              | fieldOrAny opPhrase value                      # BinaryCondition

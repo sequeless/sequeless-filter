@@ -59,6 +59,16 @@ public final class FilterParser {
             String input, int cursorOffset, OperatorRegistry ops, FieldRegistry fields) {
         try {
             FilterNode ast = parse(input, ops, fields);
+            // If the cursor is at or past the end of the meaningful input, the user may want to
+            // append a boolean operator — surface BOOLEAN_OP rather than returning Complete.
+            String meaningful = input.stripTrailing();
+            if (cursorOffset >= meaningful.length() && !meaningful.isEmpty()) {
+                CompletionHint hint = CompletionHint.builder()
+                        .cursorOffset(cursorOffset)
+                        .position(CursorPosition.BOOLEAN_OP)
+                        .build();
+                return new ParseResult.Partial(ast, hint);
+            }
             return new ParseResult.Complete(ast);
         } catch (Exception ignored) {
             // fall through to partial analysis

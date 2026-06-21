@@ -80,8 +80,8 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
 
     @Override
     public FilterNode visitPrimary(FilterParser.PrimaryContext ctx) {
-        if (ctx.filter() != null) {
-            return visit(ctx.filter());
+        if (ctx.disjunction() != null) {
+            return visit(ctx.disjunction());
         }
         return visit(ctx.condition());
     }
@@ -186,11 +186,7 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
             return JsonNodeFactory.instance.textNode(unescapeString(ctx.STRING().getText()));
         }
         if (ctx.NUMBER() != null) {
-            BigDecimal bd = new BigDecimal(ctx.NUMBER().getText());
-            if (bd.scale() <= 0 && bd.precision() <= 18) {
-                return JsonNodeFactory.instance.numberNode(bd.longValueExact());
-            }
-            return JsonNodeFactory.instance.numberNode(bd.doubleValue());
+            return parseNumber(ctx.NUMBER().getText());
         }
         if (ctx.TRUE() != null) return BooleanNode.TRUE;
         if (ctx.FALSE() != null) return BooleanNode.FALSE;
@@ -217,11 +213,7 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
             return JsonNodeFactory.instance.textNode(unescapeString(ctx.STRING().getText()));
         }
         if (ctx.NUMBER() != null) {
-            BigDecimal bd = new BigDecimal(ctx.NUMBER().getText());
-            if (bd.scale() <= 0 && bd.precision() <= 18) {
-                return JsonNodeFactory.instance.numberNode(bd.longValueExact());
-            }
-            return JsonNodeFactory.instance.numberNode(bd.doubleValue());
+            return parseNumber(ctx.NUMBER().getText());
         }
         // WORD — used for ENUM args
         return JsonNodeFactory.instance.textNode(ctx.WORD().getText());
@@ -271,6 +263,18 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
                 }
             }
         }
+    }
+
+    private static JsonNode parseNumber(String text) {
+        BigDecimal bd = new BigDecimal(text);
+        if (bd.scale() <= 0) {
+            long lv = bd.longValueExact();
+            if (lv >= Integer.MIN_VALUE && lv <= Integer.MAX_VALUE) {
+                return JsonNodeFactory.instance.numberNode((int) lv);
+            }
+            return JsonNodeFactory.instance.numberNode(lv);
+        }
+        return JsonNodeFactory.instance.numberNode(bd.doubleValue());
     }
 
     /** Strips outer quote characters and unescapes doubled inner quotes. */
