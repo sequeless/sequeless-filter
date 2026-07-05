@@ -26,11 +26,22 @@
       <artifactId>antlr4-runtime</artifactId>
     </dependency>
 
-    <!-- test -->
+    <!-- test: declared directly (not via sequeless-test-support, which now depends on sequeless-core
+         to host the conformance suite; core depends on this module, so routing through test-support
+         here too would be a reactor cycle). -->
     <dependency>
-      <groupId>org.sequeless</groupId>
-      <artifactId>sequeless-test-support</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
