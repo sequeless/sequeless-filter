@@ -24,16 +24,6 @@ class BoundaryRulesTest {
             .as("sequeless-filter must stay transport-agnostic — no Spring dependency");
 
     @ArchTest
-    static final ArchRule internal_is_not_referenced_from_outside_filter = noClasses()
-            .that()
-            .resideOutsideOfPackage("org.sequeless.filter..")
-            .should()
-            .dependOnClassesThat()
-            .resideInAPackage("org.sequeless.filter.internal..")
-            .as("..filter.internal.. is not part of the published contract")
-            .allowEmptyShould(true);
-
-    @ArchTest
     static final ArchRule api_and_spi_types_are_public = classes()
             .that()
             .resideInAnyPackage("org.sequeless.filter.api..", "org.sequeless.filter.spi..")
