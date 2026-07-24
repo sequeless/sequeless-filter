@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "America/Toronto",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "commitMessagePrefix": "chore(deps): ",
+  "rangeStrategy": "bump",
+  "packageRules": [
+    {
+      "description": "Automerge patch/minor for all ecosystems once CI passes.",
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+    {
+      "description": "Keep Maven dependency updates grouped.",
+      "matchManagers": ["maven"],
+      "groupName": "maven dependencies"
+    }
+  ],
+  "maven": { "enabled": true },
+  "github-actions": { "enabled": true }
+}

@@ -1,0 +1,10 @@
+# Default owners for everything in the repo.
+* @sequeless/maintainers
+
+# Build & release engineering
+/.github/        @sequeless/maintainers
+/pom.xml         @sequeless/maintainers
+/src/            @sequeless/maintainers
+
+# Docs & ADRs
+/docs/           @sequeless/maintainers
