@@ -17,6 +17,7 @@ import org.sequeless.filter.api.AnyFilterExpander;
 import org.sequeless.filter.api.FieldDefinition;
 import org.sequeless.filter.api.FieldFilter;
 import org.sequeless.filter.api.FieldRegistry;
+import org.sequeless.filter.api.FieldRegistrySpec;
 import org.sequeless.filter.api.FilterNode;
 import org.sequeless.filter.api.Filters;
 import org.sequeless.filter.api.OperatorRegistry;
@@ -38,7 +39,9 @@ class AnyFilterExpanderTest {
         FieldDefinition age =
                 FieldDefinition.builder().path("age").jsonSchemaType("number").build();
 
-        fields = FieldRegistry.of(List.of(name, description, age));
+        fields = FieldRegistry.of(FieldRegistrySpec.builder()
+                .fields(List.of(name, description, age))
+                .build());
         ops = OperatorRegistry.defaults();
     }
 

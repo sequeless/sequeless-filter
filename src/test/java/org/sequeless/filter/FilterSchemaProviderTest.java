@@ -13,6 +13,7 @@ import org.sequeless.filter.api.CompletionContext;
 import org.sequeless.filter.api.CompletionProvider;
 import org.sequeless.filter.api.FieldDefinition;
 import org.sequeless.filter.api.FieldRegistry;
+import org.sequeless.filter.api.FieldRegistrySpec;
 import org.sequeless.filter.api.FilterSchemaProvider;
 import org.sequeless.filter.api.OperatorDefinition;
 import org.sequeless.filter.api.OperatorRegistry;
@@ -35,7 +36,9 @@ class FilterSchemaProviderTest {
                 .permittedOperators(List.of("is greater than", "is less than"))
                 .build();
 
-        fields = FieldRegistry.of(List.of(statusField, ageField));
+        fields = FieldRegistry.of(FieldRegistrySpec.builder()
+                .fields(List.of(statusField, ageField))
+                .build());
         ops = OperatorRegistry.defaults();
         provider = new FilterSchemaProvider(ops, fields);
     }
@@ -75,7 +78,8 @@ class FilterSchemaProviderTest {
                 .jsonSchemaType("string")
                 .completionProvider(mockProvider)
                 .build();
-        FieldRegistry fieldsWithProvider = FieldRegistry.of(List.of(statusWithProvider));
+        FieldRegistry fieldsWithProvider = FieldRegistry.of(
+                FieldRegistrySpec.builder().fields(List.of(statusWithProvider)).build());
         FilterSchemaProvider p = new FilterSchemaProvider(ops, fieldsWithProvider);
 
         List<String> suggestions = p.suggestValues("status", "is", "act");

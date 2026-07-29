@@ -39,7 +39,7 @@ public final class FilterValidator {
     private static void validateField(
             FieldFilter f, OperatorRegistry ops, FieldRegistry fields, List<FilterViolation> violations) {
 
-        if (!fields.isPermissive() && fields.find(f.path()).isEmpty()) {
+        if (fields.find(f.path()).isEmpty()) {
             violations.add(new FilterViolation(f.path(), "Unknown field: '" + f.path() + "'"));
             return;
         }

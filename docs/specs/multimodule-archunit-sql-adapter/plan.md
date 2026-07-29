@@ -630,7 +630,7 @@ no benefit while the version is shared.
 
 ## Tasks
 
-- [ ] T1: (Phase 1) Add `FieldRegistrySpec` (Lombok `@Builder`, `List<FieldDefinition> fields`) to
+- [x] T1: (Phase 1) Add `FieldRegistrySpec` (Lombok `@Builder`, `List<FieldDefinition> fields`) to
       `org.sequeless.filter.api`; change `DefaultFieldRegistry`'s constructor and
       `FieldRegistry.of(...)` to accept `FieldRegistrySpec` instead of `List<FieldDefinition>`
       (`DefaultFieldRegistry` itself stays a plain constructor, no builder needed); delete

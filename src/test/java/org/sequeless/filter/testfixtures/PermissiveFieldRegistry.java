@@ -1,4 +1,4 @@
-package org.sequeless.filter.internal;
+package org.sequeless.filter.testfixtures;
 
 import java.util.List;
 import java.util.Optional;
@@ -7,15 +7,13 @@ import org.sequeless.filter.api.FieldRegistry;
 import org.sequeless.filter.api.OperatorRegistry;
 
 /**
- * No-op {@link FieldRegistry} that accepts any well-formed dot-notation path.
- * Field validation is disabled; {@link #compatibleWith} always returns an empty list.
+ * Test-only no-op {@link FieldRegistry} that accepts any well-formed dot-notation path by
+ * synthesizing a string-typed {@link FieldDefinition} for it. {@link #compatibleWith} always
+ * returns an empty list.
  */
 public final class PermissiveFieldRegistry implements FieldRegistry {
 
     public static final PermissiveFieldRegistry INSTANCE = new PermissiveFieldRegistry();
-
-    private static final FieldDefinition WILDCARD =
-            FieldDefinition.builder().path("*").jsonSchemaType("string").build();
 
     private PermissiveFieldRegistry() {}
 
@@ -33,10 +31,5 @@ public final class PermissiveFieldRegistry implements FieldRegistry {
     @Override
     public List<FieldDefinition> compatibleWith(String canonicalOperator, OperatorRegistry operators) {
         return List.of();
-    }
-
-    @Override
-    public boolean isPermissive() {
-        return true;
     }
 }

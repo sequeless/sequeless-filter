@@ -12,11 +12,12 @@ import org.sequeless.filter.api.FilterParser;
 import org.sequeless.filter.api.FilterSerializer;
 import org.sequeless.filter.api.Filters;
 import org.sequeless.filter.api.OperatorRegistry;
+import org.sequeless.filter.testfixtures.PermissiveFieldRegistry;
 
 class FilterSerializerTest {
 
     private static final OperatorRegistry OPS = OperatorRegistry.defaults();
-    private static final FieldRegistry FIELDS = FieldRegistry.permissive();
+    private static final FieldRegistry FIELDS = PermissiveFieldRegistry.INSTANCE;
 
     private FilterNode roundTrip(FilterNode node) {
         String serialized = FilterSerializer.serialize(node, OPS);

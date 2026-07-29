@@ -8,16 +8,18 @@ import org.sequeless.filter.api.AndFilter;
 import org.sequeless.filter.api.AnyFilter;
 import org.sequeless.filter.api.FieldFilter;
 import org.sequeless.filter.api.FieldRegistry;
+import org.sequeless.filter.api.FieldRegistrySpec;
 import org.sequeless.filter.api.FilterNode;
 import org.sequeless.filter.api.FilterParseException;
 import org.sequeless.filter.api.FilterParser;
 import org.sequeless.filter.api.OperatorRegistry;
 import org.sequeless.filter.api.OrFilter;
+import org.sequeless.filter.testfixtures.PermissiveFieldRegistry;
 
 class FilterParserTest {
 
     private static final OperatorRegistry OPS = OperatorRegistry.defaults();
-    private static final FieldRegistry FIELDS = FieldRegistry.permissive();
+    private static final FieldRegistry FIELDS = PermissiveFieldRegistry.INSTANCE;
 
     private FilterNode parse(String input) {
         return FilterParser.parse(input, OPS, FIELDS);
@@ -165,7 +167,7 @@ class FilterParserTest {
 
     @Test
     void throwsOnUnknownField() {
-        FieldRegistry strict = FieldRegistry.of(java.util.List.of());
+        FieldRegistry strict = FieldRegistry.of(FieldRegistrySpec.builder().build());
         assertThatThrownBy(() -> FilterParser.parse("status is 'active'", OPS, strict))
                 .isInstanceOf(FilterParseException.class)
                 .hasMessageContaining("status");
