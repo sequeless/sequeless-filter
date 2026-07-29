@@ -25,7 +25,7 @@ public class BuiltinOperatorContributor implements OperatorContributor {
                 op("starts with", List.of("starts_with"), STRING_TYPE),
                 op("is like", List.of("like"), STRING_TYPE),
                 op("is not like", List.of("not like"), STRING_TYPE),
-                op("is in", List.of("in"), ALL_TYPES),
+                listOp("is in", List.of("in"), ALL_TYPES),
                 unary("exists", List.of(), ALL_TYPES),
                 unary("does not exist", List.of("not exists"), ALL_TYPES));
     }
@@ -36,6 +36,16 @@ public class BuiltinOperatorContributor implements OperatorContributor {
                 .aliases(aliases)
                 .applicableTypes(types)
                 .syntax(Syntax.INFIX)
+                .build();
+    }
+
+    private static OperatorDefinition listOp(String canonical, List<String> aliases, List<String> types) {
+        return OperatorDefinition.builder()
+                .canonicalName(canonical)
+                .aliases(aliases)
+                .applicableTypes(types)
+                .syntax(Syntax.INFIX)
+                .listValued(true)
                 .build();
     }
 

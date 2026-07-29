@@ -41,9 +41,33 @@ public class OperatorDefinition {
     @Builder.Default
     boolean unary = false;
 
+    /**
+     * {@code true} for {@link Syntax#INFIX} operators whose right-hand side is a JSON array
+     * (only {@code is in} among the built-ins). Ignored for unary and {@link Syntax#FUNCTION}
+     * operators, whose shape follows from those flags — see {@link #getValueShape()}.
+     */
+    @Builder.Default
+    boolean listValued = false;
+
     /** Non-empty only for {@link Syntax#FUNCTION} operators. */
     @Builder.Default
     List<ParameterDefinition> parameters = List.of();
+
+    /**
+     * Derived value shape — never set directly. {@link ValueShape#NONE} when {@link #isUnary()};
+     * {@link ValueShape#LIST} when {@link #getSyntax()} is {@link Syntax#FUNCTION} (function
+     * operators always carry an argument array, regardless of arity) or {@link #isListValued()};
+     * {@link ValueShape#SCALAR} otherwise. Precedence: unary &gt; function/list &gt; scalar.
+     */
+    public ValueShape getValueShape() {
+        if (unary) {
+            return ValueShape.NONE;
+        }
+        if (syntax == Syntax.FUNCTION || listValued) {
+            return ValueShape.LIST;
+        }
+        return ValueShape.SCALAR;
+    }
 
     /** Defensive-copy overrides for the Lombok-generated builder setters. */
     public static class OperatorDefinitionBuilder {
