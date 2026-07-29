@@ -1,5 +1,6 @@
 package org.sequeless.filter.api;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +51,8 @@ public final class FilterValidator {
             return;
         }
 
+        checkValueShape(f.path(), f.op(), op, f.value(), violations);
+
         fields.find(f.path()).ifPresent(fieldDef -> {
             if (!op.getApplicableTypes().isEmpty() && !op.getApplicableTypes().contains(fieldDef.getJsonSchemaType())) {
                 violations.add(new FilterViolation(
@@ -65,8 +68,37 @@ public final class FilterValidator {
     }
 
     private static void validateAny(AnyFilter a, OperatorRegistry ops, List<FilterViolation> violations) {
-        if (ops.findByCanonicalOrAlias(a.op()).isEmpty()) {
+        OperatorDefinition op = ops.findByCanonicalOrAlias(a.op()).orElse(null);
+        if (op == null) {
             violations.add(new FilterViolation(null, "Unknown operator in AnyFilter: '" + a.op() + "'"));
+            return;
+        }
+        checkValueShape(null, a.op(), op, a.value(), violations);
+    }
+
+    private static void checkValueShape(
+            String path, String opName, OperatorDefinition op, JsonNode value, List<FilterViolation> violations) {
+        switch (op.getValueShape()) {
+            case NONE -> {
+                if (value != null && !value.isNull()) {
+                    violations.add(new FilterViolation(path, "Operator '" + opName + "' is unary and takes no value"));
+                }
+            }
+            case LIST -> {
+                if (value == null) {
+                    violations.add(new FilterViolation(path, "Operator '" + opName + "' requires a value"));
+                } else if (!value.isArray()) {
+                    violations.add(new FilterViolation(path, "Operator '" + opName + "' expects a list value"));
+                }
+            }
+            case SCALAR -> {
+                if (value == null) {
+                    violations.add(new FilterViolation(path, "Operator '" + opName + "' requires a value"));
+                } else if (value.isArray()) {
+                    violations.add(
+                            new FilterViolation(path, "Operator '" + opName + "' expects a single value, not a list"));
+                }
+            }
         }
     }
 }

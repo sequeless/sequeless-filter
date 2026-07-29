@@ -647,7 +647,7 @@ no benefit while the version is shared.
       is expected to keep passing unmodified. One atomic commit, plain `fix:` type — per D1/D10, do
       not mark it a breaking change even though `isPermissive()` removal technically is one. `make
       verify` stays green.
-- [ ] T2: (Phase 1) Give `OperatorDefinition` a **derived**, three-state value-shape signal (per
+- [x] T2: (Phase 1) Give `OperatorDefinition` a **derived**, three-state value-shape signal (per
       **D17/D28**) — `NONE` when `isUnary()`, `LIST` when `getSyntax() == Syntax.FUNCTION`, `SCALAR`
       otherwise — and mark `is in` as the one `LIST`-shaped exception among the `INFIX` built-ins in
       `BuiltinOperatorContributor`. A plain scalar-default boolean is explicitly wrong here: it would
