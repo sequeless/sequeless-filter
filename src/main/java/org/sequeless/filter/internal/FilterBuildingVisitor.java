@@ -153,7 +153,7 @@ public class FilterBuildingVisitor extends FilterBaseVisitor<FilterNode> {
     private String resolvePath(FilterParser.PathContext ctx) {
         String path = ctx.WORD().stream().map(TerminalNode::getText).collect(Collectors.joining("."));
 
-        if (!fields.isPermissive() && fields.find(path).isEmpty()) {
+        if (fields.find(path).isEmpty()) {
             throw new FilterParseException(
                     "Unknown field path: '" + path + "'", ctx.getStart().getStartIndex());
         }

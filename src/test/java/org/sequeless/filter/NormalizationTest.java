@@ -7,11 +7,12 @@ import org.sequeless.filter.api.FieldFilter;
 import org.sequeless.filter.api.FieldRegistry;
 import org.sequeless.filter.api.FilterParser;
 import org.sequeless.filter.api.OperatorRegistry;
+import org.sequeless.filter.testfixtures.PermissiveFieldRegistry;
 
 class NormalizationTest {
 
     private static final OperatorRegistry OPS = OperatorRegistry.defaults();
-    private static final FieldRegistry FIELDS = FieldRegistry.permissive();
+    private static final FieldRegistry FIELDS = PermissiveFieldRegistry.INSTANCE;
 
     @Test
     void equalsAliasResolvesToIsCanonical() {
