@@ -15,6 +15,7 @@ import org.sequeless.filter.api.ParameterDefinition;
 import org.sequeless.filter.api.ParameterType;
 import org.sequeless.filter.api.Syntax;
 import org.sequeless.filter.spi.OperatorContributor;
+import org.sequeless.filter.testfixtures.PermissiveFieldRegistry;
 
 class FunctionArgValidationTest {
 
@@ -42,7 +43,7 @@ class FunctionArgValidationTest {
 
         OperatorContributor custom = () -> List.of(withinLast);
         ops = OperatorRegistry.of(List.of(custom));
-        fields = FieldRegistry.permissive();
+        fields = PermissiveFieldRegistry.INSTANCE;
     }
 
     @Test
