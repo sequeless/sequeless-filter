@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.sequeless.filter.api.CompletionEngine;
 import org.sequeless.filter.api.FieldDefinition;
 import org.sequeless.filter.api.FieldRegistry;
+import org.sequeless.filter.api.FieldRegistrySpec;
 import org.sequeless.filter.api.OperatorRegistry;
 
 class CompletionEngineTest {
@@ -24,7 +25,9 @@ class CompletionEngineTest {
         FieldDefinition ageField =
                 FieldDefinition.builder().path("age").jsonSchemaType("number").build();
 
-        FieldRegistry fields = FieldRegistry.of(List.of(statusField, ageField));
+        FieldRegistry fields = FieldRegistry.of(FieldRegistrySpec.builder()
+                .fields(List.of(statusField, ageField))
+                .build());
         OperatorRegistry ops = OperatorRegistry.defaults();
         engine = new CompletionEngine(ops, fields);
     }
