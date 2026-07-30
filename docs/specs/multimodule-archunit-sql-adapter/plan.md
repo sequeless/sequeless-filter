@@ -660,7 +660,7 @@ no benefit while the version is shared.
       not just filter-sql-adapter (which additionally calls it directly per D27/T6, since nothing
       calls `FilterValidator` automatically). Separate commit from T1 (different concern, though both
       touch validator-adjacent code).
-- [ ] T3: (Phase 2) Convert the root `pom.xml` to `<packaging>pom</packaging>` with
+- [x] T3: (Phase 2) Convert the root `pom.xml` to `<packaging>pom</packaging>` with
       `<modules><module>filter-core</module></modules>`, hoisting the current plain `<dependencies>`
       (jackson-databind, antlr4-runtime, lombok, junit-jupiter, assertj-core, mockito-core,
       archunit-junit5 — there is no `<dependencyManagement>` block today, so this is introducing one,
