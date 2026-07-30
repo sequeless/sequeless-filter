@@ -21,6 +21,7 @@
 
   <modules>
     <module>filter-core</module>
+    <module>filter-sql-adapter</module>
   </modules>
 
   <properties>
