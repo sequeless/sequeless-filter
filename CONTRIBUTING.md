@@ -54,4 +54,4 @@ the properties in `pom.xml`:
 ```
 
 Set `jacoco.line.min` from the module's actually-measured coverage (see the report under
-`target/site/jacoco/`), and ratchet it up over time rather than guessing a threshold now.
+`filter-core/target/site/jacoco/`), and ratchet it up over time rather than guessing a threshold now.

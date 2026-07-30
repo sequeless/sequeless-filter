@@ -680,7 +680,7 @@ no benefit while the version is shared.
       its own `<build><plugins>`; `git mv` `src/` and the ANTLR grammar under `filter-core/`. Verify
       `filter-core/target/generated-sources/antlr4/org/sequeless/filter/internal/parser/` is
       generated and all existing tests still run.
-- [ ] T4: (Phase 2) Reactor-proof the surrounding tooling: `.releaserc.json` (`-DprocessAllModules=true`,
+- [x] T4: (Phase 2) Reactor-proof the surrounding tooling: `.releaserc.json` (`-DprocessAllModules=true`,
       git assets `["CHANGELOG.md", "pom.xml", "*/pom.xml"]`), `README.md` dependency coordinates
       (`filter-core`, and a short module table), a `make verify` smoke check, and an ADR recording the
       split via `make new-adr`. Per **D25**: before touching Sonar config, verify empirically whether
