@@ -93,3 +93,8 @@ function-argument index the cursor sits in.
 
 A field's `CompletionProvider` is optional and embedder-supplied (e.g. backing a `status` field's value
 completion with the live set of distinct values) — fields without one simply offer no value candidates.
+
+## See also
+
+- [SQL adapter](sql-adapter.md) — translating a parsed `FilterNode` AST into parameterized SQL
+  against a relational database, via `filter-sql-adapter`.
