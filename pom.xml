@@ -37,6 +37,7 @@
     <junit-jupiter.version>5.11.4</junit-jupiter.version>
     <assertj-core.version>3.26.3</assertj-core.version>
     <mockito-core.version>5.14.2</mockito-core.version>
+    <h2.version>2.3.232</h2.version>
 
     <spotless.version>2.44.0</spotless.version>
     <palantir-java-format.version>2.50.0</palantir-java-format.version>
@@ -64,6 +65,12 @@
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-runtime</artifactId>
         <version>${antlr4.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>${h2.version}</version>
+        <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
