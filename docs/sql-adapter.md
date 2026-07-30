@@ -2,59 +2,61 @@
 
 `filter-sql-adapter` (`org.sequeless:filter-sql-adapter`) translates a parsed `FilterNode` AST into
 raw, parameterized SQL — a `String` with `?` placeholders plus an ordered bind-parameter list, the
-classic JDBC `PreparedStatement` shape. It has no dependency on any particular database driver and
-no ORM/Criteria object graph: you get SQL text and values back, and you run them yourself.
+classic JDBC `PreparedStatement` shape. No database driver dependency, no ORM/Criteria object graph:
+you get SQL text and values back, and you run them yourself.
 
-This page covers the translation pipeline, the `JsonNode`→Java value-conversion rules, the
-distinction between vendor-defined `LIKE` escaping and mandated identifier quoting, how to write a
-vendor-specific `QueryBuilder`, and this adapter's known limitations.
+**On this page:** the [translation pipeline](#the-pipeline), the
+[value-conversion rules](#value-conversion-jsonnode--java), the
+[`LIKE` escaping vs. identifier quoting](#like-escaping-vs-identifier-quoting) distinction,
+[writing a vendor `QueryBuilder`](#writing-a-vendor-querybuilder), and
+[known limitations](#known-limitations).
 
 See [docs/filter-dsl.md](filter-dsl.md) for the DSL itself (grammar, operators, parsing).
 
 ## The pipeline
 
-```
-DSL text --FilterParser.parse--> FilterNode
-                                     |
-                                     v
-                   FilterQueryTranslator.translate(node, columns, fields, ops, builder)
-                                     |
-              1. FilterValidator.validate(node, ops, fields)  -- internal, not opt-in
-              2. walk the tree, expanding `any` per-node via AnyFilterExpander's default strategy
-              3. resolve each path via ColumnMapping
-              4. convert each JsonNode value to a plain Java value
-              5. delegate rendering to QueryBuilder
-                                     |
-                                     v
-                               SqlFragment(sql, parameters)
-                                     |
-                                     v
-                       PreparedStatement + positional setObject(...)
-```
-
 `FilterQueryTranslator` (`org.sequeless.filter.sql.api`) is the single vendor-agnostic entry point;
-`DefaultFilterQueryTranslator` is its (and currently only) implementation. A few behaviors worth
-calling out explicitly:
+`DefaultFilterQueryTranslator` is its (and currently only) implementation.
 
-- **Validation is internal, not opt-in.** Nothing else in this library calls `FilterValidator`
-  automatically — `FilterParser.parse` does not validate. `translate(...)` calls
-  `FilterValidator.validate(node, ops, fields)` itself, first, and converts any reported violation
-  to `SqlRenderException`. This means `translate(...)` is safe to call directly against an
-  unvalidated, hand-built, or deserialized `FilterNode` — you never need a separate validation step
-  before calling it.
-- **`any` is expanded internally, per-node, using the default expansion strategy.** As the walker
-  visits an `AnyFilter` node, it calls `AnyFilterExpander`'s default strategy right there (not once
-  over the whole tree up front) and continues walking the resulting operands. Any operand whose
-  path has no `ColumnMapping` entry is silently dropped rather than failing the whole filter;
-  `SqlRenderException` is raised only if *no* expanded operand survives. This leniency applies only
-  to `any`-expansion results — an explicitly-named path anywhere else in the tree still hard-fails
-  on an unmapped column exactly as before. There is no way to supply a *custom*
-  `AnyExpansionStrategy` through `translate(...)` — see [Known limitations](#known-limitations).
-- **`ColumnMapping` resolves each path to a bare column name**, and (per its `identity()` factory)
-  rejects dotted paths — see [Known limitations](#known-limitations).
-- **`QueryBuilder` owns all SQL construction** — identifier quoting, operator-to-SQL translation,
-  value binding, `AND`/`OR` combination. The translator never renders SQL text itself; it only
-  walks, validates, resolves, and converts, then delegates.
+```
+DSL text
+  │ FilterParser.parse
+  ▼
+FilterNode ──► FilterQueryTranslator.translate(node, columns, fields, ops, builder)
+                 1. validate       FilterValidator.validate(node, ops, fields) — internal, not opt-in
+                 2. walk the tree, expanding `any` per-node via AnyFilterExpander's default strategy
+                 3. resolve        each path via ColumnMapping
+                 4. convert        each JsonNode value to a plain Java value
+                 5. delegate       rendering to QueryBuilder
+                 ▼
+               SqlFragment(sql, parameters)
+                 ▼
+               PreparedStatement + positional setObject(...)
+```
+
+Four behaviors worth calling out explicitly:
+
+**Validation is internal, not opt-in.** Nothing else in this library calls `FilterValidator`
+automatically — `FilterParser.parse` does not validate. `translate(...)` calls
+`FilterValidator.validate(node, ops, fields)` itself, first, and converts any reported violation to
+`SqlRenderException`. You never need a separate validation step before calling it, even against an
+unvalidated, hand-built, or deserialized `FilterNode`.
+
+**`any` is expanded internally, per-node, using the default expansion strategy.** As the walker
+visits an `AnyFilter` node, it calls `AnyFilterExpander`'s default strategy right there — not once
+over the whole tree up front — and continues walking the resulting operands. An operand whose path
+has no `ColumnMapping` entry is silently dropped rather than failing the whole filter;
+`SqlRenderException` is raised only if *no* expanded operand survives. This leniency is scoped to
+`any`-expansion results only — an explicitly-named path anywhere else in the tree still hard-fails on
+an unmapped column. There's no way to supply a *custom* `AnyExpansionStrategy` through
+`translate(...)` — see [Known limitations](#known-limitations).
+
+**`ColumnMapping` resolves each path to a bare column name**, and (per its `identity()` factory)
+rejects dotted paths — see [Known limitations](#known-limitations).
+
+**`QueryBuilder` owns all SQL construction** — identifier quoting, operator-to-SQL translation, value
+binding, `AND`/`OR` combination. The translator never renders SQL text itself; it only walks,
+validates, resolves, and converts, then delegates.
 
 ### Usage example
 
@@ -119,49 +121,44 @@ for free:
 | any other numeric node (e.g. `BigIntegerNode`, `DecimalNode`) | via `isNumber()`/`numberValue()` |
 | anything else (`ObjectNode`, `BinaryNode`, `POJONode`, `MissingNode`, ...) | `SqlRenderException` |
 
-Two things worth calling out explicitly:
+Two caveats worth calling out explicitly:
 
-- **No temporal coercion.** There is no date/time literal in the grammar, so a field with
+- **No temporal coercion.** There's no date/time literal in the grammar, so a field with
   `jsonSchemaFormat: "date-time"` still arrives as a plain `TextNode` and converts to a plain
   `String`. Binding that string against a `TIMESTAMP`/`DATE` column is left entirely to the vendor
   `QueryBuilder`/JDBC driver — this adapter performs no parsing or coercion of date-time values.
 - **`BigInteger` binding caveat.** A `BigIntegerNode` (a JSON integer past `Long.MAX_VALUE`, which
   can only arise from a deserialized `FilterNode`, not the parser) converts via the numeric
-  catch-all to a raw `BigInteger`. Most JDBC drivers' `PreparedStatement.setObject` do not accept a
-  `BigInteger` directly and will throw at execution time — this is a known limitation of the
-  current conversion table, not something worked around elsewhere in the pipeline. If your values
-  may exceed `Long.MAX_VALUE`, be prepared to handle this at the JDBC layer (e.g. converting to
-  `BigDecimal` or a `String` column yourself).
+  catch-all to a raw `BigInteger`. Most JDBC drivers' `PreparedStatement.setObject` don't accept a
+  `BigInteger` directly and will throw at execution time. If your values may exceed
+  `Long.MAX_VALUE`, be prepared to handle this at the JDBC layer (e.g. converting to `BigDecimal`
+  or a `String` column yourself).
 
-A `null` Java value passed to `QueryBuilder.binary(...)` means SQL `NULL` (e.g. from
-`status is null`, i.e. a `NullNode` converted to `null`) — it does **not** mean "no value." Dispatch
+A `null` Java value passed to `QueryBuilder.binary(...)` means SQL `NULL` — e.g. from
+`status is null`, a `NullNode` converted to `null` — it does **not** mean "no value." Dispatch
 between `binary(...)` and `unary(...)` is always by the operator's own `isUnary()` flag, never by
 whether the converted value is `null`, so `status is null` reliably renders `IS NULL` rather than
 being mistaken for a unary condition like `exists`.
 
 ## `LIKE` escaping vs. identifier quoting
 
-These look like similar "vendor gets to decide the details" questions but are not the same kind of
-decision:
+These look like similar "vendor gets to decide the details" questions, but they aren't the same
+kind of decision.
 
-- **`LIKE`-family escaping (`contains`, `starts with`, `is like`, `is not like`) is vendor-defined,
-  by design.** Whether a literal `%` or `_` inside a value is escaped before being placed in a
-  `LIKE` pattern — and therefore whether such a value matches literally or as a wildcard — is left
-  entirely to each `QueryBuilder` implementation's discretion. The shipped `AnsiQueryBuilder`
-  performs **no** escaping: `contains` renders `%value%`, `starts with` renders `value%`, and
-  `is like`/`is not like` use the value as-is (the caller supplies its own wildcards). A different
-  `QueryBuilder` — including a different vendor adapter you write yourself — may escape `%`/`_`
-  differently, and no cross-vendor test in this repository asserts one specific outcome. This is a
-  matching-semantics choice, not a security boundary.
-- **Identifier quoting on the shipped default is mandated, because it's a security boundary, not a
-  style choice.** `AnsiQueryBuilder.quoteIdentifier` emits `"…"` with any embedded `"` doubled, and
-  its Javadoc states this explicitly: this is the one thing standing between a caller-supplied
-  column name and SQL injection when a `ColumnMapping` (especially `identity()`, which performs no
-  validation of its own) hands the translator a path that ultimately came from programmatic or
-  deserialized input rather than the grammar's own restricted identifier token
-  (`[a-zA-Z_][a-zA-Z_0-9]*`). A subclass that overrides `quoteIdentifier` must preserve an
-  equivalent injection-safe guarantee for its target dialect's quoting syntax — this is not free to
-  change for cosmetic reasons the way `LIKE` escaping is.
+| | `LIKE`-family escaping | Identifier quoting |
+| --- | --- | --- |
+| Covers | `contains`, `starts with`, `is like`, `is not like` | Every column name the translator emits |
+| Shipped default (`AnsiQueryBuilder`) | **No escaping.** `contains` → `%value%`, `starts with` → `value%`, `is like`/`is not like` use the value as-is (caller supplies wildcards) | `quoteIdentifier` emits `"…"` with any embedded `"` doubled |
+| Vendor-overridable? | Yes, freely — a matching-semantics choice, not a security boundary | Yes, but must preserve an equivalent injection-safe guarantee |
+| Why it's not fixed cross-vendor | Whether `%`/`_` inside a value is escaped changes literal-vs-wildcard matching; no cross-vendor test asserts one outcome | N/A — this one is fixed on the shipped default |
+
+Identifier quoting on the shipped default is mandated because it's the one thing standing between a
+caller-supplied column name and SQL injection — specifically when a `ColumnMapping` (especially
+`identity()`, which performs no validation of its own) hands the translator a path that came from
+programmatic or deserialized input rather than the grammar's own restricted identifier token
+(`[a-zA-Z_][a-zA-Z_0-9]*`). A subclass overriding `quoteIdentifier` must preserve that guarantee for
+its target dialect's quoting syntax — it isn't free to change for cosmetic reasons the way `LIKE`
+escaping is.
 
 ## Writing a vendor `QueryBuilder`
 
@@ -201,32 +198,12 @@ stays free of any compile-time reference to a specific concrete adapter.
 
 ## Known limitations
 
-- **Flat, single-table column mappings only.** `ColumnMapping` returns a bare column name, and a
-  `SqlFragment` is a single `WHERE`-clause fragment plus its binds — there is no way to express a
-  join, a correlated subquery, or a JSON path expression. This matters because the DSL's own
-  headline example, `lineItems.qty > 5`, typically means a join on a relational schema, not a
-  column — that shape is out of scope for this adapter as specified. If you have a real column
-  backing a dotted path (e.g. via a joined view), you can still map it explicitly with
-  `ColumnMapping.of(Map)`.
-- **`ColumnMapping.identity()` rejects dotted paths.** Because of the single-table limitation above,
-  `identity()` returns `Optional.empty()` for any path containing `.`, which the translator turns
-  into a clean `SqlRenderException` at translation time — rather than producing a syntactically
-  valid but nonexistent quoted identifier like `"lineItems.qty"` that would only fail later as a
-  vendor-specific "column does not exist" error at execution time. This restriction is scoped to
-  `identity()` only; `ColumnMapping.of(Map)` is unaffected and can map a dotted path deliberately.
-  Also note `identity()` is documented as trusted-input-only — it performs no other validation, so
-  paths from untrusted or deserialized input should use an explicit `of(Map)` allowlist instead.
-- **A custom `AnyExpansionStrategy` is unreachable through this adapter.** `translate(...)` always
-  uses `AnyFilterExpander`'s default expansion strategy internally; there is no parameter to supply
-  a different one. If you need non-default `any` expansion semantics, pre-expand the filter
-  yourself (with your own `AnyExpansionStrategy`) before calling `translate(...)`.
-- **`LIKE`-family escaping is vendor-defined**, not a fixed cross-vendor contract — see
-  [`LIKE` escaping vs. identifier quoting](#like-escaping-vs-identifier-quoting) above.
-- **Date-time values pass through as plain strings**, with no temporal coercion — see
-  [Value conversion](#value-conversion-jsonnode--java) above.
-- **`BigInteger` values may not bind via `PreparedStatement.setObject`** on most JDBC drivers — see
-  [Value conversion](#value-conversion-jsonnode--java) above.
-- **`QueryBuilder` and `FilterQueryTranslator` implementations are expected to be stateless and
-  thread-safe.** This isn't enforced by any type, but callers will naturally hold one instance of
-  each as a long-lived singleton shared across request threads — `DefaultFilterQueryTranslator` and
-  `AnsiQueryBuilder` both hold no mutable state, and a subclass should preserve that.
+| Limitation | Why / workaround |
+| --- | --- |
+| **Flat, single-table column mappings only.** No join, correlated subquery, or JSON path expression. | `ColumnMapping` returns a bare column name and `SqlFragment` is a single `WHERE`-clause fragment plus binds. Matters because the DSL's headline example, `lineItems.qty > 5`, typically means a join on a relational schema, not a column. If you have a real column backing a dotted path (e.g. a joined view), map it explicitly with `ColumnMapping.of(Map)`. |
+| **`ColumnMapping.identity()` rejects dotted paths** — returns `Optional.empty()`, which becomes `SqlRenderException`. | Fails fast at translation time instead of producing a valid-looking but nonexistent quoted identifier (`"lineItems.qty"`) that would only fail later as a vendor-specific "column does not exist" error. Scoped to `identity()` only — `ColumnMapping.of(Map)` can map a dotted path deliberately. `identity()` is also trusted-input-only (no other validation); use an explicit `of(Map)` allowlist for untrusted/deserialized paths. |
+| **A custom `AnyExpansionStrategy` is unreachable through this adapter.** | `translate(...)` always uses `AnyFilterExpander`'s default strategy internally, with no parameter to override it. Pre-expand the filter yourself with your own strategy before calling `translate(...)` if you need different semantics. |
+| **`LIKE`-family escaping is vendor-defined**, not a fixed cross-vendor contract. | See [`LIKE` escaping vs. identifier quoting](#like-escaping-vs-identifier-quoting). |
+| **Date-time values pass through as plain strings**, no temporal coercion. | See [Value conversion](#value-conversion-jsonnode--java). |
+| **`BigInteger` values may not bind via `PreparedStatement.setObject`** on most JDBC drivers. | See [Value conversion](#value-conversion-jsonnode--java). |
+| **`QueryBuilder`/`FilterQueryTranslator` implementations are expected to be stateless and thread-safe.** | Not enforced by any type — callers will naturally hold one long-lived singleton instance shared across request threads. `DefaultFilterQueryTranslator` and `AnsiQueryBuilder` both hold no mutable state; a subclass should preserve that. |
