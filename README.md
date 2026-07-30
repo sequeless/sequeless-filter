@@ -33,6 +33,7 @@ Requires JDK 21.
 | Module | Coordinates | Contents |
 | --- | --- | --- |
 | [`filter-core`](filter-core) | `org.sequeless:filter-core` | The DSL: AST model, ANTLR 4 grammar and parser, serializer, operator and field registries, completion utilities. |
+| [`filter-sql-adapter`](filter-sql-adapter) | `org.sequeless:filter-sql-adapter` | Translates a parsed `FilterNode` AST into raw, parameterized SQL via a hexagonal `QueryBuilder` vendor port. See [docs/sql-adapter.md](docs/sql-adapter.md). |
 
 The repository root is a `pom`-packaged aggregator/parent (`org.sequeless:sequeless-filter`) that
 ships no code — it holds the single shared version, dependency management, and build plugins. All
@@ -52,6 +53,7 @@ install is required.
 ## Documentation
 
 - [Filter DSL reference](docs/filter-dsl.md) — grammar, operators, serialization, completion.
+- [SQL adapter](docs/sql-adapter.md) — translating a `FilterNode` AST into parameterized SQL.
 - Architecture decisions live under [`docs/adr/`](docs/adr/).
 
 ## Contributing
