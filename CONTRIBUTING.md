@@ -36,8 +36,7 @@ non-obvious decision; ADRs are immutable — supersede with a new one rather tha
 ## Quality gates
 
 Spotless (format), Enforcer (dependency hygiene, including the "no Spring" ban), and ArchUnit
-(boundaries) all run in `make verify`. CodeQL (static analysis) and gitleaks (secret scanning)
-run in CI.
+(boundaries) all run in `make verify`. CodeQL (static analysis) run in CI.
 
 ## Coverage (JaCoCo) convention
 
