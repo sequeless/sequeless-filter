@@ -49,4 +49,4 @@ jobs:
             echo "SONAR_TOKEN not set; skipping SonarCloud scan."
             exit 0
           fi
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.token="$SONAR_TOKEN"
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.token="$SONAR_TOKEN" -Dsonar.organization="$SONAR_ORGANIZATION"
