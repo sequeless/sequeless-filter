@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -15,17 +16,8 @@ concurrency:
 
 jobs:
   build:
-    name: Build (verify + gates)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "25"
-          cache: maven
-      - name: Build, test and quality gates
-        run: ./mvnw -B verify
+    uses: sequeless/sequeless-build/.github/workflows/maven-ci.yml@workflows-v0.1.2
+    secrets: inherit
 
   sonar:
     name: SonarCloud
