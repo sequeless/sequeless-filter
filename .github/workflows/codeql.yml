@@ -28,7 +28,7 @@ jobs:
         if: matrix.language == 'java-kotlin'
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
           cache: maven
       - uses: github/codeql-action/init@v3
         with:

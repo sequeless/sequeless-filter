@@ -197,36 +197,41 @@ public final class CursorAnalyzer {
             State state, String field, List<Token> opTokens, int cursorOffset, OperatorRegistry ops) {
 
         return switch (state) {
-            case START, IN_PATH, IN_PATH_DOT -> CompletionHint.builder()
-                    .cursorOffset(cursorOffset)
-                    .position(CursorPosition.FIELD)
-                    .build();
+            case START, IN_PATH, IN_PATH_DOT ->
+                CompletionHint.builder()
+                        .cursorOffset(cursorOffset)
+                        .position(CursorPosition.FIELD)
+                        .build();
 
-            case AFTER_FIELD, IN_OP -> CompletionHint.builder()
-                    .cursorOffset(cursorOffset)
-                    .position(CursorPosition.OPERATOR)
-                    .fieldPath(field)
-                    .operator(tryResolveOp(opTokens, ops))
-                    .build();
+            case AFTER_FIELD, IN_OP ->
+                CompletionHint.builder()
+                        .cursorOffset(cursorOffset)
+                        .position(CursorPosition.OPERATOR)
+                        .fieldPath(field)
+                        .operator(tryResolveOp(opTokens, ops))
+                        .build();
 
-            case AFTER_OP, IN_VALUE -> CompletionHint.builder()
-                    .cursorOffset(cursorOffset)
-                    .position(CursorPosition.VALUE)
-                    .fieldPath(field)
-                    .operator(tryResolveOp(opTokens, ops))
-                    .build();
+            case AFTER_OP, IN_VALUE ->
+                CompletionHint.builder()
+                        .cursorOffset(cursorOffset)
+                        .position(CursorPosition.VALUE)
+                        .fieldPath(field)
+                        .operator(tryResolveOp(opTokens, ops))
+                        .build();
 
-            case AFTER_VALUE -> CompletionHint.builder()
-                    .cursorOffset(cursorOffset)
-                    .position(CursorPosition.BOOLEAN_OP)
-                    .fieldPath(field)
-                    .build();
+            case AFTER_VALUE ->
+                CompletionHint.builder()
+                        .cursorOffset(cursorOffset)
+                        .position(CursorPosition.BOOLEAN_OP)
+                        .fieldPath(field)
+                        .build();
 
-            case AFTER_MEETS -> CompletionHint.builder()
-                    .cursorOffset(cursorOffset)
-                    .position(CursorPosition.FUNCTION_NAME)
-                    .fieldPath(field)
-                    .build();
+            case AFTER_MEETS ->
+                CompletionHint.builder()
+                        .cursorOffset(cursorOffset)
+                        .position(CursorPosition.FUNCTION_NAME)
+                        .fieldPath(field)
+                        .build();
 
             case AFTER_FUNCTION_NAME, IN_FUNCTION_ARGS -> {
                 String fnName = opTokens.isEmpty() ? null : opTokens.get(0).getText();

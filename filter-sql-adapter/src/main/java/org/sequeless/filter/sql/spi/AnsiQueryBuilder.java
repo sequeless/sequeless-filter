@@ -40,10 +40,8 @@ public class AnsiQueryBuilder implements QueryBuilder {
         return switch (operator.getCanonicalName()) {
             case "is" -> renderIs(quoted, false, value);
             case "is not" -> renderIs(quoted, true, value);
-            case "is greater than",
-                    "is greater than or equal to",
-                    "is less than",
-                    "is less than or equal to" -> renderComparison(quoted, operator, value);
+            case "is greater than", "is greater than or equal to", "is less than", "is less than or equal to" ->
+                renderComparison(quoted, operator, value);
             case "contains", "starts with", "is like", "is not like" -> renderLike(quoted, operator, value);
             case "is in" -> renderIn(quoted, toValueList(column, operator, value));
             default -> renderUnknown(quoted, operator, value);
@@ -137,15 +135,14 @@ public class AnsiQueryBuilder implements QueryBuilder {
      * @return the rendered fragment
      */
     protected SqlFragment renderComparison(String column, OperatorDefinition operator, Object value) {
-        String sqlOperator =
-                switch (operator.getCanonicalName()) {
-                    case "is greater than" -> ">";
-                    case "is greater than or equal to" -> ">=";
-                    case "is less than" -> "<";
-                    case "is less than or equal to" -> "<=";
-                    default -> throw new SqlRenderException(
-                            "Unsupported comparison operator: '" + operator.getCanonicalName() + "'");
-                };
+        String sqlOperator = switch (operator.getCanonicalName()) {
+            case "is greater than" -> ">";
+            case "is greater than or equal to" -> ">=";
+            case "is less than" -> "<";
+            case "is less than or equal to" -> "<=";
+            default ->
+                throw new SqlRenderException("Unsupported comparison operator: '" + operator.getCanonicalName() + "'");
+        };
         return new SqlFragment(column + " " + sqlOperator + " ?", newList(value));
     }
 
@@ -171,14 +168,13 @@ public class AnsiQueryBuilder implements QueryBuilder {
      * @return the rendered fragment
      */
     protected SqlFragment renderLike(String column, OperatorDefinition operator, Object value) {
-        String pattern =
-                switch (operator.getCanonicalName()) {
-                    case "contains" -> "%" + value + "%";
-                    case "starts with" -> value + "%";
-                    case "is like", "is not like" -> String.valueOf(value);
-                    default -> throw new SqlRenderException(
-                            "Unsupported LIKE-family operator: '" + operator.getCanonicalName() + "'");
-                };
+        String pattern = switch (operator.getCanonicalName()) {
+            case "contains" -> "%" + value + "%";
+            case "starts with" -> value + "%";
+            case "is like", "is not like" -> String.valueOf(value);
+            default ->
+                throw new SqlRenderException("Unsupported LIKE-family operator: '" + operator.getCanonicalName() + "'");
+        };
         boolean negated = "is not like".equals(operator.getCanonicalName());
         return new SqlFragment(column + (negated ? " NOT LIKE ?" : " LIKE ?"), newList(pattern));
     }

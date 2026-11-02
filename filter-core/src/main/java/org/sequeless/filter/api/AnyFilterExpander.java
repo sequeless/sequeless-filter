@@ -37,12 +37,14 @@ public final class AnyFilterExpander {
                 yield strategy.expand(a, compatible);
             }
             case FieldFilter f -> f;
-            case AndFilter a -> new AndFilter(a.operands().stream()
-                    .map(o -> expand(o, fields, ops, strategy))
-                    .toList());
-            case OrFilter o -> new OrFilter(o.operands().stream()
-                    .map(op -> expand(op, fields, ops, strategy))
-                    .toList());
+            case AndFilter a ->
+                new AndFilter(a.operands().stream()
+                        .map(o -> expand(o, fields, ops, strategy))
+                        .toList());
+            case OrFilter o ->
+                new OrFilter(o.operands().stream()
+                        .map(op -> expand(op, fields, ops, strategy))
+                        .toList());
         };
     }
 }
