@@ -55,14 +55,18 @@ class FilterParserTest {
 
     @Test
     void parsesNumericComparisons() {
-        assertThat(parse("qty > 5")).isInstanceOfSatisfying(FieldFilter.class, f -> assertThat(f.op())
-                .isEqualTo("is greater than"));
-        assertThat(parse("qty >= 5")).isInstanceOfSatisfying(FieldFilter.class, f -> assertThat(f.op())
-                .isEqualTo("is greater than or equal to"));
-        assertThat(parse("qty < 5")).isInstanceOfSatisfying(FieldFilter.class, f -> assertThat(f.op())
-                .isEqualTo("is less than"));
-        assertThat(parse("qty <= 5")).isInstanceOfSatisfying(FieldFilter.class, f -> assertThat(f.op())
-                .isEqualTo("is less than or equal to"));
+        assertThat(parse("qty > 5"))
+                .isInstanceOfSatisfying(
+                        FieldFilter.class, f -> assertThat(f.op()).isEqualTo("is greater than"));
+        assertThat(parse("qty >= 5"))
+                .isInstanceOfSatisfying(
+                        FieldFilter.class, f -> assertThat(f.op()).isEqualTo("is greater than or equal to"));
+        assertThat(parse("qty < 5"))
+                .isInstanceOfSatisfying(
+                        FieldFilter.class, f -> assertThat(f.op()).isEqualTo("is less than"));
+        assertThat(parse("qty <= 5"))
+                .isInstanceOfSatisfying(
+                        FieldFilter.class, f -> assertThat(f.op()).isEqualTo("is less than or equal to"));
     }
 
     @Test
@@ -78,15 +82,17 @@ class FilterParserTest {
     @Test
     void parsesDoesNotExist() {
         FilterNode node = parse("deletedAt does not exist");
-        assertThat(node).isInstanceOfSatisfying(FieldFilter.class, f -> assertThat(f.op())
-                .isEqualTo("does not exist"));
+        assertThat(node)
+                .isInstanceOfSatisfying(
+                        FieldFilter.class, f -> assertThat(f.op()).isEqualTo("does not exist"));
     }
 
     @Test
     void parsesNotExistsAlias() {
         FilterNode node = parse("deletedAt not exists");
-        assertThat(node).isInstanceOfSatisfying(FieldFilter.class, f -> assertThat(f.op())
-                .isEqualTo("does not exist"));
+        assertThat(node)
+                .isInstanceOfSatisfying(
+                        FieldFilter.class, f -> assertThat(f.op()).isEqualTo("does not exist"));
     }
 
     @Test
@@ -102,8 +108,9 @@ class FilterParserTest {
     @Test
     void parsesOrDisjunction() {
         FilterNode node = parse("status is 'active' or status is 'pending'");
-        assertThat(node).isInstanceOfSatisfying(OrFilter.class, o -> assertThat(o.operands())
-                .hasSize(2));
+        assertThat(node)
+                .isInstanceOfSatisfying(
+                        OrFilter.class, o -> assertThat(o.operands()).hasSize(2));
     }
 
     @Test
@@ -118,8 +125,9 @@ class FilterParserTest {
     @Test
     void parsesDotNotationPath() {
         FilterNode node = parse("lineItems.qty > 0");
-        assertThat(node).isInstanceOfSatisfying(FieldFilter.class, f -> assertThat(f.path())
-                .isEqualTo("lineItems.qty"));
+        assertThat(node)
+                .isInstanceOfSatisfying(
+                        FieldFilter.class, f -> assertThat(f.path()).isEqualTo("lineItems.qty"));
     }
 
     @Test
@@ -152,17 +160,19 @@ class FilterParserTest {
     @Test
     void parsesBooleanValue() {
         FilterNode node = parse("active is true");
-        assertThat(node).isInstanceOfSatisfying(FieldFilter.class, f -> assertThat(
-                        f.value().booleanValue())
-                .isTrue());
+        assertThat(node)
+                .isInstanceOfSatisfying(
+                        FieldFilter.class,
+                        f -> assertThat(f.value().booleanValue()).isTrue());
     }
 
     @Test
     void parsesStringWithEmbeddedSingleQuote() {
         FilterNode node = parse("note contains 'it''s fine'");
-        assertThat(node).isInstanceOfSatisfying(FieldFilter.class, f -> assertThat(
-                        f.value().textValue())
-                .isEqualTo("it's fine"));
+        assertThat(node)
+                .isInstanceOfSatisfying(
+                        FieldFilter.class,
+                        f -> assertThat(f.value().textValue()).isEqualTo("it's fine"));
     }
 
     @Test

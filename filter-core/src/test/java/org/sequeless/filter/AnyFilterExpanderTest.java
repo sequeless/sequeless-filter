@@ -67,9 +67,10 @@ class AnyFilterExpanderTest {
                 Filters.field("age", "is greater than", JsonNodeFactory.instance.numberNode(18)));
 
         FilterNode expanded = AnyFilterExpander.expand(and, fields, ops);
-        assertThat(expanded).isInstanceOfSatisfying(org.sequeless.filter.api.AndFilter.class, a -> assertThat(
-                        a.operands().get(0))
-                .isInstanceOf(OrFilter.class));
+        assertThat(expanded)
+                .isInstanceOfSatisfying(
+                        org.sequeless.filter.api.AndFilter.class,
+                        a -> assertThat(a.operands().get(0)).isInstanceOf(OrFilter.class));
     }
 
     @Test

@@ -54,8 +54,7 @@ class H2FilterQueryTranslatorTest {
         connection = DriverManager.getConnection("jdbc:h2:mem:" + getClass().getSimpleName() + "_" + System.nanoTime()
                 + ";DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
         try (Statement stmt = connection.createStatement()) {
-            stmt.execute(
-                    """
+            stmt.execute("""
                     CREATE TABLE products (
                         id BIGINT PRIMARY KEY,
                         status VARCHAR(32),
@@ -65,8 +64,7 @@ class H2FilterQueryTranslatorTest {
                         archived_at TIMESTAMP
                     )
                     """);
-            stmt.execute(
-                    """
+            stmt.execute("""
                     INSERT INTO products (id, status, name, description, age, archived_at) VALUES
                         (1, 'open',   'Widget',   'A useful widget',        21, NULL),
                         (2, 'closed', 'Gadget',   'A fancy gadget',         65, TIMESTAMP '2024-01-01 00:00:00'),

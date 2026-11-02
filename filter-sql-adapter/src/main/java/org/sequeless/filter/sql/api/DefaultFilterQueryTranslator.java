@@ -66,12 +66,11 @@ public final class DefaultFilterQueryTranslator implements FilterQueryTranslator
         @Override
         public SqlFragment visitAny(AnyFilter node) {
             FilterNode expanded = AnyFilterExpander.expand(node, fields, ops);
-            List<FilterNode> candidateOperands =
-                    switch (expanded) {
-                        case OrFilter o -> o.operands();
-                        case AndFilter a -> a.operands();
-                        default -> List.of(expanded);
-                    };
+            List<FilterNode> candidateOperands = switch (expanded) {
+                case OrFilter o -> o.operands();
+                case AndFilter a -> a.operands();
+                default -> List.of(expanded);
+            };
 
             List<SqlFragment> survivors = new ArrayList<>();
             for (FilterNode candidate : candidateOperands) {
