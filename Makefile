@@ -24,7 +24,3 @@ fmt: ## Apply formatting (Spotless for Java)
 .PHONY: new-adr
 new-adr: ## Scaffold a new ADR: make new-adr title="Some decision"
 	@scripts/new-adr.sh "$(title)"
-
-.PHONY: release-dry-run
-release-dry-run: ## Preview the next semantic-release version and changelog
-	npx --no-install semantic-release --dry-run
