@@ -37,7 +37,7 @@ public interface FieldRegistry {
 
     /**
      * Builds a strict registry from the given spec.
-     * The parser will reject any path not present in {@link FieldRegistrySpec#getFields()}.
+     * The parser will reject any path not present in {@code FieldRegistrySpec#getFields()}.
      */
     static FieldRegistry of(FieldRegistrySpec spec) {
         return new DefaultFieldRegistry(spec);

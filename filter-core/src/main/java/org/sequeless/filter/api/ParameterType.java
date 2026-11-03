@@ -5,6 +5,6 @@ public enum ParameterType {
     INT,
     FLOAT,
     STRING,
-    /** Constrained to a finite set of values listed in {@link ParameterDefinition#getAllowedValues()}. */
+    /** Constrained to a finite set of values listed in {@code ParameterDefinition#getAllowedValues()}. */
     ENUM
 }

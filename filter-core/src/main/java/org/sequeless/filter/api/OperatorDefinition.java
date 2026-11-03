@@ -54,9 +54,9 @@ public class OperatorDefinition {
     List<ParameterDefinition> parameters = List.of();
 
     /**
-     * Derived value shape — never set directly. {@link ValueShape#NONE} when {@link #isUnary()};
-     * {@link ValueShape#LIST} when {@link #getSyntax()} is {@link Syntax#FUNCTION} (function
-     * operators always carry an argument array, regardless of arity) or {@link #isListValued()};
+     * Derived value shape — never set directly. {@link ValueShape#NONE} when {@code isUnary()};
+     * {@link ValueShape#LIST} when {@code getSyntax()} is {@link Syntax#FUNCTION} (function
+     * operators always carry an argument array, regardless of arity) or {@code isListValued()};
      * {@link ValueShape#SCALAR} otherwise. Precedence: unary &gt; function/list &gt; scalar.
      */
     public ValueShape getValueShape() {
