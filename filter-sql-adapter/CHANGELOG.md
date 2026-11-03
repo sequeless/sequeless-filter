@@ -1,5 +1,8 @@
 # Changelog
 
+* The following workspace dependencies were updated
+    * org.sequeless:filter-core bumped to 0.1.2
+
 ## 0.1.1 (2026-11-03)
 
 
