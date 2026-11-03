@@ -79,7 +79,11 @@ public final class FilterSerializer {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < operands.size(); i++) {
             if (i > 0) sb.append(" and ");
-            sb.append(serializeNode(operands.get(i), ops, true));
+            if (operands.get(i) instanceof AndFilter nested) {
+                sb.append("(").append(serializeAnd(nested, ops)).append(")");
+            } else {
+                sb.append(serializeNode(operands.get(i), ops, true));
+            }
         }
         return sb.toString();
     }
@@ -89,7 +93,11 @@ public final class FilterSerializer {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < operands.size(); i++) {
             if (i > 0) sb.append(" or ");
-            sb.append(serializeNode(operands.get(i), ops, false));
+            if (operands.get(i) instanceof OrFilter nested) {
+                sb.append("(").append(serializeOr(nested, ops, false)).append(")");
+            } else {
+                sb.append(serializeNode(operands.get(i), ops, false));
+            }
         }
         String result = sb.toString();
         return insideAnd ? "(" + result + ")" : result;
