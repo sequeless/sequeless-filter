@@ -156,4 +156,24 @@ class FilterSerializerTest {
         FilterNode original = Filters.field("name", "is not like", JsonNodeFactory.instance.textNode("foo%"));
         assertThat(roundTrip(original)).isEqualTo(original);
     }
+
+    @Test
+    void roundTripsNestedAnd() {
+        FilterNode original = Filters.and(
+                Filters.and(
+                        Filters.field("a", "is", JsonNodeFactory.instance.textNode("x")),
+                        Filters.field("b", "is", JsonNodeFactory.instance.textNode("y"))),
+                Filters.field("c", "is", JsonNodeFactory.instance.textNode("z")));
+        assertThat(roundTrip(original)).isEqualTo(original);
+    }
+
+    @Test
+    void roundTripsNestedOr() {
+        FilterNode original = Filters.or(
+                Filters.or(
+                        Filters.field("a", "is", JsonNodeFactory.instance.textNode("x")),
+                        Filters.field("b", "is", JsonNodeFactory.instance.textNode("y"))),
+                Filters.field("c", "is", JsonNodeFactory.instance.textNode("z")));
+        assertThat(roundTrip(original)).isEqualTo(original);
+    }
 }
