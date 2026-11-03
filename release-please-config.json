@@ -11,13 +11,11 @@
     "filter-core": {
       "component": "filter-core",
       "versioning": "always-bump-patch",
-      "release-as": "0.1.1",
       "skip-snapshot": true
     },
     "filter-sql-adapter": {
       "component": "filter-sql-adapter",
       "versioning": "always-bump-patch",
-      "release-as": "0.1.1",
       "skip-snapshot": true
     }
   }
