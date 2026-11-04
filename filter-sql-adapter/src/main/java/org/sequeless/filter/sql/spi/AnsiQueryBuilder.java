@@ -190,14 +190,8 @@ public class AnsiQueryBuilder implements QueryBuilder {
      */
     protected SqlFragment renderLike(SqlExpression operand, OperatorDefinition operator, Object value) {
         rejectNullValue(operator, operand, value);
-        String name = operator.getCanonicalName();
-        String pattern = switch (name) {
-            case "contains" -> "%" + escapeLike(String.valueOf(value)) + "%";
-            case "starts with" -> escapeLike(String.valueOf(value)) + "%";
-            case "is like", "is not like" -> String.valueOf(value);
-            default -> throw new SqlRenderException("Unsupported LIKE-family operator: '" + name + "'");
-        };
-        if (!"is not like".equals(name)) {
+        String pattern = likePattern(operator, value);
+        if (!"is not like".equals(operator.getCanonicalName())) {
             return new SqlFragment("UPPER(" + operand.sql() + ") LIKE UPPER(?) ESCAPE '\\'", bind(operand, pattern));
         }
         // The complement of 'is like': a NULL field is included, so the operand appears three times.
@@ -208,13 +202,46 @@ public class AnsiQueryBuilder implements QueryBuilder {
         return new SqlFragment(sql, parameters);
     }
 
-    /** Escapes the LIKE wildcards and the escape character, so a literal value matches literally. */
-    private static String escapeLike(String literal) {
+    /**
+     * The LIKE pattern for a value, with its wildcard placed by the operator. Dialects that override
+     * {@link #renderLike} with their own operator (for example {@code ILIKE}) use this, so they match
+     * the same literals as this default.
+     *
+     * @param operator the resolved LIKE-family operator
+     * @param value    the already-converted value; must not be {@code null}
+     * @return the pattern to bind
+     * @throws SqlRenderException if {@code operator} is not in the LIKE family
+     */
+    protected static String likePattern(OperatorDefinition operator, Object value) {
+        String name = operator.getCanonicalName();
+        return switch (name) {
+            case "contains" -> "%" + escapeLike(String.valueOf(value)) + "%";
+            case "starts with" -> escapeLike(String.valueOf(value)) + "%";
+            case "is like", "is not like" -> String.valueOf(value);
+            default -> throw new SqlRenderException("Unsupported LIKE-family operator: '" + name + "'");
+        };
+    }
+
+    /**
+     * Escapes the LIKE wildcards and the escape character, so a literal value matches literally under
+     * {@code ESCAPE '\'}.
+     *
+     * @param literal the literal text
+     * @return {@code literal} with {@code \}, {@code %} and {@code _} escaped
+     */
+    protected static String escapeLike(String literal) {
         return literal.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
-    /** A LIKE pattern or comparison cannot be {@code NULL}; the value must be present. */
-    private static void rejectNullValue(OperatorDefinition operator, SqlExpression operand, Object value) {
+    /**
+     * Rejects a {@code null} value for an operator that cannot take one: a comparison or a LIKE pattern.
+     *
+     * @param operator the resolved operator
+     * @param operand  the operand, for the message
+     * @param value    the already-converted value
+     * @throws SqlRenderException if {@code value} is {@code null}
+     */
+    protected static void rejectNullValue(OperatorDefinition operator, SqlExpression operand, Object value) {
         if (value == null) {
             throw new SqlRenderException("Operator '" + operator.getCanonicalName() + "' on field " + operand.sql()
                     + " needs a value; null is only valid for 'is', 'is not', 'exists' and 'does not exist'");
