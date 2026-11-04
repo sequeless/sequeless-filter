@@ -20,6 +20,7 @@
 
   <properties>
     <maven.compiler.release>25</maven.compiler.release>
+    <sequeless.github.repository>sequeless-filter</sequeless.github.repository>
     <lombok.version>1.18.48</lombok.version>
     <jackson-databind.version>2.18.3</jackson-databind.version>
     <junit-jupiter.version>5.11.4</junit-jupiter.version>
