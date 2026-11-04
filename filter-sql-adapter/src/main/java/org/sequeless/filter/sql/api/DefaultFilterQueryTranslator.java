@@ -22,7 +22,7 @@ import org.sequeless.filter.sql.spi.QueryBuilder;
  * The sole shipped {@link FilterQueryTranslator} implementation.
  *
  * <p>Stateless and thread-safe: a fresh {@link Visitor} is constructed per {@link #translate}
- * call, closing over that call's {@code columns}/{@code fields}/{@code ops}/{@code builder}
+ * call, closing over that call's {@code resolver}/{@code fields}/{@code ops}/{@code builder}
  * arguments, so a single {@code DefaultFilterQueryTranslator} instance may safely be shared and
  * reused across concurrent callers.
  */
@@ -30,12 +30,12 @@ public final class DefaultFilterQueryTranslator implements FilterQueryTranslator
 
     @Override
     public SqlFragment translate(
-            FilterNode node, ColumnMapping columns, FieldRegistry fields, OperatorRegistry ops, QueryBuilder builder) {
+            FilterNode node, FieldResolver resolver, FieldRegistry fields, OperatorRegistry ops, QueryBuilder builder) {
         List<FilterViolation> violations = FilterValidator.validate(node, ops, fields);
         if (!violations.isEmpty()) {
             throw new SqlRenderException("Filter failed validation: " + violations);
         }
-        return new Visitor(columns, fields, ops, builder).walk(node);
+        return new Visitor(resolver, fields, ops, builder).walk(node);
     }
 
     /**
@@ -44,13 +44,13 @@ public final class DefaultFilterQueryTranslator implements FilterQueryTranslator
      */
     private static final class Visitor extends FilterVisitor<SqlFragment> {
 
-        private final ColumnMapping columns;
+        private final FieldResolver resolver;
         private final FieldRegistry fields;
         private final OperatorRegistry ops;
         private final QueryBuilder builder;
 
-        Visitor(ColumnMapping columns, FieldRegistry fields, OperatorRegistry ops, QueryBuilder builder) {
-            this.columns = columns;
+        Visitor(FieldResolver resolver, FieldRegistry fields, OperatorRegistry ops, QueryBuilder builder) {
+            this.resolver = resolver;
             this.fields = fields;
             this.ops = ops;
             this.builder = builder;
@@ -59,8 +59,8 @@ public final class DefaultFilterQueryTranslator implements FilterQueryTranslator
         @Override
         public SqlFragment visitField(FieldFilter node) {
             OperatorDefinition operator = resolveOperator(node.op());
-            String column = resolveColumn(node.path());
-            return renderCondition(column, operator, node.value());
+            Field field = resolveField(node.path());
+            return renderCondition(field, operator, node.value());
         }
 
         @Override
@@ -75,7 +75,7 @@ public final class DefaultFilterQueryTranslator implements FilterQueryTranslator
             List<SqlFragment> survivors = new ArrayList<>();
             for (FilterNode candidate : candidateOperands) {
                 if (candidate instanceof FieldFilter f
-                        && columns.columnFor(f.path()).isEmpty()) {
+                        && resolver.resolve(f.path()).isEmpty()) {
                     continue;
                 }
                 survivors.add(walk(candidate));
@@ -83,7 +83,7 @@ public final class DefaultFilterQueryTranslator implements FilterQueryTranslator
 
             if (survivors.isEmpty()) {
                 throw new SqlRenderException(
-                        "'any " + node.op() + "' expansion produced no operands mapped by the supplied ColumnMapping");
+                        "'any " + node.op() + "' expansion produced no operands mapped by the supplied FieldResolver");
             }
             return builder.or(survivors);
         }
@@ -108,16 +108,16 @@ public final class DefaultFilterQueryTranslator implements FilterQueryTranslator
             return builder.or(rendered);
         }
 
-        private SqlFragment renderCondition(String column, OperatorDefinition operator, JsonNode rawValue) {
+        private SqlFragment renderCondition(Field field, OperatorDefinition operator, JsonNode rawValue) {
             if (operator.isUnary()) {
-                return builder.unary(column, operator);
+                return builder.unary(field, operator);
             }
             Object value = convertValue(rawValue);
             if (operator.getValueShape() == ValueShape.LIST && value instanceof List<?> list && list.isEmpty()) {
-                throw new SqlRenderException("Operator '" + operator.getCanonicalName() + "' on column '" + column
-                        + "' was given an empty list value");
+                throw new SqlRenderException("Operator '" + operator.getCanonicalName() + "' on field '"
+                        + describe(field) + "' was given an empty list value");
             }
-            return builder.binary(column, operator, value);
+            return builder.binary(field, operator, value);
         }
 
         private OperatorDefinition resolveOperator(String opName) {
@@ -125,9 +125,17 @@ public final class DefaultFilterQueryTranslator implements FilterQueryTranslator
                     .orElseThrow(() -> new SqlRenderException("Unknown operator: '" + opName + "'"));
         }
 
-        private String resolveColumn(String path) {
-            return columns.columnFor(path)
+        private Field resolveField(String path) {
+            return resolver.resolve(path)
                     .orElseThrow(() -> new SqlRenderException("Unmapped column for path: '" + path + "'"));
+        }
+
+        /** A human-readable name for error messages: the column name, or the expression text. */
+        private static String describe(Field field) {
+            return switch (field) {
+                case Field.Column column -> column.name();
+                case Field.Expression expression -> expression.expression().sql();
+            };
         }
 
         private static Object convertValue(JsonNode node) {

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import org.sequeless.filter.spi.OperatorContributor;
 import org.sequeless.filter.sql.api.ColumnMapping;
 import org.sequeless.filter.sql.api.DefaultFilterQueryTranslator;
 import org.sequeless.filter.sql.api.FilterQueryTranslator;
+import org.sequeless.filter.sql.api.SqlExpression;
 import org.sequeless.filter.sql.api.SqlFragment;
 import org.sequeless.filter.sql.api.SqlRenderException;
 import org.sequeless.filter.sql.spi.AnsiQueryBuilder;
@@ -329,11 +331,13 @@ class DefaultFilterQueryTranslatorTest {
 
         QueryBuilder soundexBuilder = new AnsiQueryBuilder() {
             @Override
-            protected SqlFragment renderUnknown(String column, OperatorDefinition operator, Object value) {
+            protected SqlFragment renderUnknown(SqlExpression operand, OperatorDefinition operator, Object value) {
                 if ("sounds like".equals(operator.getCanonicalName())) {
-                    return new SqlFragment("SOUNDEX(" + column + ") = SOUNDEX(?)", List.of(value));
+                    List<Object> params = new ArrayList<>(operand.parameters());
+                    params.add(value);
+                    return new SqlFragment("SOUNDEX(" + operand.sql() + ") = SOUNDEX(?)", params);
                 }
-                return super.renderUnknown(column, operator, value);
+                return super.renderUnknown(operand, operator, value);
             }
         };
 
