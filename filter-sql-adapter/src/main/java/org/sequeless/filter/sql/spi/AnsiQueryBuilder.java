@@ -2,6 +2,7 @@ package org.sequeless.filter.sql.spi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.sequeless.filter.api.OperatorDefinition;
 import org.sequeless.filter.sql.api.Field;
 import org.sequeless.filter.sql.api.SqlExpression;
@@ -125,6 +126,9 @@ public class AnsiQueryBuilder implements QueryBuilder {
      * Renders {@code is} / {@code is not}, including {@code IS NULL} / {@code IS NOT NULL} when
      * {@code value} is {@code null}.
      *
+     * <p>{@code is not} is null-safe: it uses {@code IS DISTINCT FROM}, so a row whose field is
+     * {@code NULL} is included. A plain {@code <>} would drop it (spec 6, section 3.3).
+     *
      * @param operand  the already-rendered field operand; its parameters come first
      * @param negated  {@code true} for {@code is not}, {@code false} for {@code is}
      * @param value    the already-converted value; {@code null} means SQL {@code NULL}
@@ -134,7 +138,7 @@ public class AnsiQueryBuilder implements QueryBuilder {
         if (value == null) {
             return new SqlFragment(operand.sql() + (negated ? " IS NOT NULL" : " IS NULL"), operand.parameters());
         }
-        return new SqlFragment(operand.sql() + (negated ? " <> ?" : " = ?"), bind(operand, value));
+        return new SqlFragment(operand.sql() + (negated ? " IS DISTINCT FROM ?" : " = ?"), bind(operand, value));
     }
 
     /**
@@ -147,6 +151,7 @@ public class AnsiQueryBuilder implements QueryBuilder {
      * @return the rendered fragment
      */
     protected SqlFragment renderComparison(SqlExpression operand, OperatorDefinition operator, Object value) {
+        rejectNullValue(operator, operand, value);
         String sqlOperator = switch (operator.getCanonicalName()) {
             case "is greater than" -> ">";
             case "is greater than or equal to" -> ">=";
@@ -161,16 +166,20 @@ public class AnsiQueryBuilder implements QueryBuilder {
     /**
      * Renders {@code contains} / {@code starts with} / {@code is like} / {@code is not like}.
      *
-     * <p>Escaping of literal {@code %} / {@code _} characters already present in {@code value} is
-     * <strong>not</strong> performed by this default implementation (the unified semantics of spec
-     * 6, section 3.3 come in a later change). The wildcard is placed according to the operator:
+     * <p>The family is case-insensitive: {@code UPPER(field) LIKE UPPER(?) ESCAPE '\'}. A literal
+     * {@code %}, {@code _} or {@code \} in a {@code contains} or {@code starts with} value is escaped,
+     * so it matches literally. The wildcard is placed according to the operator:
      *
      * <ul>
-     *   <li>{@code contains}: {@code %value%}
-     *   <li>{@code starts with}: {@code value%}
+     *   <li>{@code contains}: {@code %value%}, with {@code value} escaped
+     *   <li>{@code starts with}: {@code value%}, with {@code value} escaped
      *   <li>{@code is like}: {@code value} used as-is (the caller supplies its own wildcards)
-     *   <li>{@code is not like}: same as {@code is like}, negated
+     *   <li>{@code is not like}: the complement of {@code is like}; a {@code NULL} field is
+     *       included, so the operand appears three times and its parameters are repeated
      * </ul>
+     *
+     * <p>A {@code null} value is rejected with {@link SqlRenderException}: a LIKE pattern cannot be
+     * {@code NULL}, and rendering it would silently match nothing.
      *
      * @param operand  the already-rendered field operand; its parameters come first
      * @param operator the resolved operator
@@ -178,15 +187,36 @@ public class AnsiQueryBuilder implements QueryBuilder {
      * @return the rendered fragment
      */
     protected SqlFragment renderLike(SqlExpression operand, OperatorDefinition operator, Object value) {
-        String pattern = switch (operator.getCanonicalName()) {
-            case "contains" -> "%" + value + "%";
-            case "starts with" -> value + "%";
+        rejectNullValue(operator, operand, value);
+        String name = operator.getCanonicalName();
+        String pattern = switch (name) {
+            case "contains" -> "%" + escapeLike(String.valueOf(value)) + "%";
+            case "starts with" -> escapeLike(String.valueOf(value)) + "%";
             case "is like", "is not like" -> String.valueOf(value);
-            default ->
-                throw new SqlRenderException("Unsupported LIKE-family operator: '" + operator.getCanonicalName() + "'");
+            default -> throw new SqlRenderException("Unsupported LIKE-family operator: '" + name + "'");
         };
-        boolean negated = "is not like".equals(operator.getCanonicalName());
-        return new SqlFragment(operand.sql() + (negated ? " NOT LIKE ?" : " LIKE ?"), bind(operand, pattern));
+        if (!"is not like".equals(name)) {
+            return new SqlFragment("UPPER(" + operand.sql() + ") LIKE UPPER(?) ESCAPE '\\'", bind(operand, pattern));
+        }
+        // The complement of 'is like': a NULL field is included, so the operand appears three times.
+        String sql = "(" + operand.sql() + " IS NULL OR UPPER(" + operand.sql() + ") NOT LIKE UPPER(?) ESCAPE '\\')";
+        List<Object> parameters = new ArrayList<>(operand.parameters());
+        parameters.addAll(operand.parameters());
+        parameters.add(pattern);
+        return new SqlFragment(sql, parameters);
+    }
+
+    /** Escapes the LIKE wildcards and the escape character, so a literal value matches literally. */
+    private static String escapeLike(String literal) {
+        return literal.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
+    /** A LIKE pattern or comparison cannot be {@code NULL}; the value must be present. */
+    private static void rejectNullValue(OperatorDefinition operator, SqlExpression operand, Object value) {
+        if (value == null) {
+            throw new SqlRenderException("Operator '" + operator.getCanonicalName() + "' on field " + operand.sql()
+                    + " needs a value; null is only valid for 'is', 'is not', 'exists' and 'does not exist'");
+        }
     }
 
     /**
@@ -198,10 +228,22 @@ public class AnsiQueryBuilder implements QueryBuilder {
      * @return the rendered fragment
      */
     protected SqlFragment renderIn(SqlExpression operand, List<Object> values) {
-        String placeholders = String.join(", ", values.stream().map(v -> "?").toList());
+        List<Object> members = values.stream().filter(Objects::nonNull).toList();
+        if (members.isEmpty()) {
+            // Only null members: 'is in [null]' means the field is NULL.
+            return new SqlFragment(operand.sql() + " IS NULL", operand.parameters());
+        }
+        String placeholders = String.join(", ", members.stream().map(v -> "?").toList());
         List<Object> parameters = new ArrayList<>(operand.parameters());
-        parameters.addAll(values);
-        return new SqlFragment(operand.sql() + " IN (" + placeholders + ")", parameters);
+        parameters.addAll(members);
+        String in = operand.sql() + " IN (" + placeholders + ")";
+        if (members.size() == values.size()) {
+            return new SqlFragment(in, parameters);
+        }
+        // A NULL member matches a NULL field, so 'is in [a, null]' equals 'is a or is null'.
+        List<Object> withNull = new ArrayList<>(parameters);
+        withNull.addAll(operand.parameters());
+        return new SqlFragment("(" + in + " OR " + operand.sql() + " IS NULL)", withNull);
     }
 
     /**

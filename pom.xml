@@ -23,6 +23,7 @@
   <modules>
     <module>filter-core</module>
     <module>filter-sql-adapter</module>
+    <module>filter-sql-testkit</module>
   </modules>
 
   <repositories>

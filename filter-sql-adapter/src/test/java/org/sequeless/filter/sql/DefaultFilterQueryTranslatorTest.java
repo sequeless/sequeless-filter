@@ -83,9 +83,10 @@ class DefaultFilterQueryTranslatorTest {
     }
 
     @Test
-    void translatesIsNotToNotEquals() {
+    void translatesIsNotToIsDistinctFrom() {
+        // Null-safe: a NULL status is included, which a plain <> would drop.
         SqlFragment f = translate(Filters.field("status", "is not", JsonNodeFactory.instance.textNode("open")));
-        assertThat(f.sql()).isEqualTo("\"status\" <> ?");
+        assertThat(f.sql()).isEqualTo("\"status\" IS DISTINCT FROM ?");
         assertThat(f.parameters()).containsExactly("open");
     }
 
@@ -138,28 +139,29 @@ class DefaultFilterQueryTranslatorTest {
     @Test
     void translatesContains() {
         SqlFragment f = translate(Filters.field("name", "contains", JsonNodeFactory.instance.textNode("foo")));
-        assertThat(f.sql()).isEqualTo("\"name\" LIKE ?");
+        assertThat(f.sql()).isEqualTo("UPPER(\"name\") LIKE UPPER(?) ESCAPE '\\'");
         assertThat(f.parameters()).containsExactly("%foo%");
     }
 
     @Test
     void translatesStartsWith() {
         SqlFragment f = translate(Filters.field("name", "starts with", JsonNodeFactory.instance.textNode("foo")));
-        assertThat(f.sql()).isEqualTo("\"name\" LIKE ?");
+        assertThat(f.sql()).isEqualTo("UPPER(\"name\") LIKE UPPER(?) ESCAPE '\\'");
         assertThat(f.parameters()).containsExactly("foo%");
     }
 
     @Test
     void translatesIsLike() {
         SqlFragment f = translate(Filters.field("name", "is like", JsonNodeFactory.instance.textNode("f_o%")));
-        assertThat(f.sql()).isEqualTo("\"name\" LIKE ?");
+        assertThat(f.sql()).isEqualTo("UPPER(\"name\") LIKE UPPER(?) ESCAPE '\\'");
         assertThat(f.parameters()).containsExactly("f_o%");
     }
 
     @Test
     void translatesIsNotLike() {
+        // Complement of 'is like': a NULL name is included.
         SqlFragment f = translate(Filters.field("name", "is not like", JsonNodeFactory.instance.textNode("f_o%")));
-        assertThat(f.sql()).isEqualTo("\"name\" NOT LIKE ?");
+        assertThat(f.sql()).isEqualTo("(\"name\" IS NULL OR UPPER(\"name\") NOT LIKE UPPER(?) ESCAPE '\\')");
         assertThat(f.parameters()).containsExactly("f_o%");
     }
 
@@ -174,14 +176,14 @@ class DefaultFilterQueryTranslatorTest {
     }
 
     @Test
-    void isInWithNullMemberBindsNullParameter() {
-        // D21: SqlFragment tolerates a null bind parameter (e.g. 'is in' with a null member).
+    void isInWithNullMemberMatchesNullField() {
+        // 'is in [a, null]' equals 'is a or is null': a null member is never bound as a parameter.
         var values = JsonNodeFactory.instance.arrayNode();
         values.add("open");
         values.addNull();
         SqlFragment f = translate(Filters.field("status", "is in", values));
-        assertThat(f.sql()).isEqualTo("\"status\" IN (?, ?)");
-        assertThat(f.parameters()).containsExactly("open", null);
+        assertThat(f.sql()).isEqualTo("(\"status\" IN (?) OR \"status\" IS NULL)");
+        assertThat(f.parameters()).containsExactly("open");
     }
 
     @Test
@@ -256,7 +258,7 @@ class DefaultFilterQueryTranslatorTest {
                 new AnyFilter("contains", JsonNodeFactory.instance.textNode("foo")), partial, fields, ops, builder);
         // Only 'name' survives the drop-unmapped step; the single survivor is still combined via
         // builder.or(...), so it comes back parenthesized like any other OR result.
-        assertThat(f.sql()).isEqualTo("(\"name\" LIKE ?)");
+        assertThat(f.sql()).isEqualTo("(UPPER(\"name\") LIKE UPPER(?) ESCAPE '\\')");
         assertThat(f.parameters()).containsExactly("%foo%");
     }
 

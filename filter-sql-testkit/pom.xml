@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.sequeless</groupId>
+    <artifactId>sequeless-build-parent</artifactId>
+    <version>0.1.3</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>org.sequeless</groupId>
+  <artifactId>filter-sql-testkit</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>Sequeless Filter SQL Testkit</name>
+  <description>Abstract JUnit 5 contract that pins the filter's operator semantics for every SQL dialect.
+    The contract lives in src/main, so JUnit and AssertJ are compile-scoped and propagate to adapters.</description>
+
+  <properties>
+    <maven.compiler.release>25</maven.compiler.release>
+    <sequeless.github.repository>sequeless-filter</sequeless.github.repository>
+    <junit-jupiter.version>5.11.4</junit-jupiter.version>
+    <assertj-core.version>3.26.3</assertj-core.version>
+    <h2.version>2.3.232</h2.version>
+    <flatten.version>1.6.0</flatten.version>
+  </properties>
+
+  <dependencies>
+    <!-- The contract runs against a QueryBuilder, so it needs the adapter's API at compile time. -->
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>filter-sql-adapter</artifactId>
+      <version>0.1.3</version>
+    </dependency>
+    <!-- The contract uses the operator registry directly, so filter-core is declared here, not only transitively. -->
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>filter-core</artifactId>
+      <version>0.1.3</version>
+    </dependency>
+    <!-- Compile scope: the contract is in src/main, so these must propagate to the adapters that extend it. -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit-jupiter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj-core.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit-jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${h2.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>github</id>
+      <url>https://maven.pkg.github.com/sequeless/*</url>
+    </repository>
+  </repositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+          <parameters>true</parameters>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <version>${flatten.version}</version>
+        <configuration>
+          <updatePomFile>true</updatePomFile>
+          <flattenMode>ossrh</flattenMode>
+        </configuration>
+        <executions>
+          <execution>
+            <id>flatten</id>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+            <phase>process-resources</phase>
+          </execution>
+          <execution>
+            <id>flatten-clean</id>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+            <phase>clean</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
