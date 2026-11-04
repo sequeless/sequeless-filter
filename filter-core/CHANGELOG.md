@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/sequeless/sequeless-filter/compare/filter-core-v0.1.2...filter-core-v0.1.3) (2026-11-04)
+
+
+### Bug Fixes
+
+* **filter:** deploy to the sequeless-filter package namespace ([f94ff70](https://github.com/sequeless/sequeless-filter/commit/f94ff7023145d8cab1a8657d710370c9be4cd438))
+
 ## [0.1.2](https://github.com/sequeless/sequeless-filter/compare/filter-core-v0.1.1...filter-core-v0.1.2) (2026-11-03)
 
 
