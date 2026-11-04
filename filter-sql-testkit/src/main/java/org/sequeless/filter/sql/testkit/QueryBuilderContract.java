@@ -39,6 +39,11 @@ public abstract class QueryBuilderContract {
     /** The table the contract creates. Every subclass must be able to create it. */
     protected static final String TABLE = "\"filter_contract\"";
 
+    private static final String STATUS = "status";
+    private static final String CLOSED = "closed";
+    private static final String CONTAINS = "contains";
+    private static final String IS_IN = "is in";
+
     private final OperatorRegistry ops = OperatorRegistry.defaults();
 
     /**
@@ -61,11 +66,11 @@ public abstract class QueryBuilderContract {
             statement.execute("CREATE TABLE " + TABLE
                     + " (\"id\" INT PRIMARY KEY, \"name\" VARCHAR(100), \"status\" VARCHAR(20), \"age\" INT)");
             insert(c, 1, "Widget", "open", 30);
-            insert(c, 2, "gadget", "closed", 40);
+            insert(c, 2, "gadget", CLOSED, 40);
             insert(c, 3, "Gizmo", null, 50);
             insert(c, 4, "widget pro", "open", null);
             insert(c, 5, "50%off", "open", 10);
-            insert(c, 6, "a_c", "closed", 20);
+            insert(c, 6, "a_c", CLOSED, 20);
             insert(c, 7, null, "open", 60);
         }
     }
@@ -75,25 +80,25 @@ public abstract class QueryBuilderContract {
     /** {@code is not} is null-safe: a NULL status is included, which a plain {@code <>} would drop. */
     @Test
     void isNotIncludesNullFields() throws SQLException {
-        assertThat(matchBinary("status", "is not", "open")).containsExactly(2, 3, 6);
+        assertThat(matchBinary(STATUS, "is not", "open")).containsExactly(2, 3, 6);
     }
 
     /** {@code is} drops NULL fields, as a plain equality does. */
     @Test
     void isDropsNullFields() throws SQLException {
-        assertThat(matchBinary("status", "is", "open")).containsExactly(1, 4, 5, 7);
+        assertThat(matchBinary(STATUS, "is", "open")).containsExactly(1, 4, 5, 7);
     }
 
     /** {@code is not null} keeps the non-NULL rows. */
     @Test
     void isNotNullKeepsNonNullRows() throws SQLException {
-        assertThat(matchBinary("status", "is not", null)).containsExactly(1, 2, 4, 5, 6, 7);
+        assertThat(matchBinary(STATUS, "is not", null)).containsExactly(1, 2, 4, 5, 6, 7);
     }
 
     /** {@code is null} keeps only the NULL rows. */
     @Test
     void isNullKeepsNullRows() throws SQLException {
-        assertThat(matchBinary("status", "is", null)).containsExactly(3);
+        assertThat(matchBinary(STATUS, "is", null)).containsExactly(3);
     }
 
     /** A comparison drops NULL fields. */
@@ -114,19 +119,19 @@ public abstract class QueryBuilderContract {
     /** {@code contains} is case-insensitive. */
     @Test
     void containsIsCaseInsensitive() throws SQLException {
-        assertThat(matchBinary("name", "contains", "WIDGET")).containsExactly(1, 4);
+        assertThat(matchBinary("name", CONTAINS, "WIDGET")).containsExactly(1, 4);
     }
 
     /** A literal {@code %} in a {@code contains} value matches only itself. */
     @Test
     void containsEscapesPercent() throws SQLException {
-        assertThat(matchBinary("name", "contains", "%")).containsExactly(5);
+        assertThat(matchBinary("name", CONTAINS, "%")).containsExactly(5);
     }
 
     /** A literal {@code _} in a {@code contains} value matches only itself. */
     @Test
     void containsEscapesUnderscore() throws SQLException {
-        assertThat(matchBinary("name", "contains", "_")).containsExactly(6);
+        assertThat(matchBinary("name", CONTAINS, "_")).containsExactly(6);
     }
 
     /** {@code starts with} escapes its value too. */
@@ -150,7 +155,7 @@ public abstract class QueryBuilderContract {
     /** The LIKE family cannot take a null value. */
     @Test
     void likeRejectsNullValue() {
-        assertThatThrownBy(() -> builder().binary(new Field.Column("name"), op("contains"), null))
+        assertThatThrownBy(() -> builder().binary(new Field.Column("name"), op(CONTAINS), null))
                 .isInstanceOf(SqlRenderException.class);
     }
 
@@ -159,19 +164,19 @@ public abstract class QueryBuilderContract {
     /** {@code is in} with a plain list matches its members. */
     @Test
     void isInMatchesMembers() throws SQLException {
-        assertThat(matchBinary("status", "is in", Arrays.asList("closed"))).containsExactly(2, 6);
+        assertThat(matchBinary(STATUS, IS_IN, Arrays.asList(CLOSED))).containsExactly(2, 6);
     }
 
     /** {@code is in [a, null]} equals {@code is a or is null}. */
     @Test
     void isInWithNullMemberAlsoMatchesNullFields() throws SQLException {
-        assertThat(matchBinary("status", "is in", Arrays.asList("open", null))).containsExactly(1, 3, 4, 5, 7);
+        assertThat(matchBinary(STATUS, IS_IN, Arrays.asList("open", null))).containsExactly(1, 3, 4, 5, 7);
     }
 
     /** {@code is in [null]} means the field is NULL. */
     @Test
     void isInOfOnlyNullMatchesNullFields() throws SQLException {
-        assertThat(matchBinary("status", "is in", Arrays.asList((Object) null))).containsExactly(3);
+        assertThat(matchBinary(STATUS, IS_IN, Arrays.asList((Object) null))).containsExactly(3);
     }
 
     /** {@code exists} keeps the rows whose field is set. */
