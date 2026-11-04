@@ -1,6 +1,6 @@
 # Spec 6: sequeless-filter 0.1.1 (release-please, then the field-expression port)
 
-Issue: [#34](https://github.com/sequeless/sequeless-prototype/issues/34). Map: [#11](https://github.com/sequeless/sequeless-prototype/issues/11), decisions on [#21](https://github.com/sequeless/sequeless-prototype/issues/21) and [#23](https://github.com/sequeless/sequeless-prototype/issues/23). Status: the migration is released (filter-core and filter-sql-adapter 0.1.3, see the PRs below). The port design (section 3.3) is settled on 2026-11-04 and is decided by the navigator's three questions; it is not yet implemented.
+Issue: [#34](https://github.com/sequeless/sequeless-prototype/issues/34). Map: [#11](https://github.com/sequeless/sequeless-prototype/issues/11), decisions on [#21](https://github.com/sequeless/sequeless-prototype/issues/21) and [#23](https://github.com/sequeless/sequeless-prototype/issues/23). Status: the migration is released (filter-core and filter-sql-adapter 0.1.3, see the PRs below). The port design is settled (section 3.3): the navigator's three questions, the gap analysis (signatures, NULL rules, testkit packaging) and the owner's decisions of 2026-11-04. Not yet implemented.
 
 ## 0. Scope and decisions
 
@@ -10,6 +10,7 @@ Issue: [#34](https://github.com/sequeless/sequeless-prototype/issues/34). Map: [
 - New modules `filter-sql-testkit` and `filter-sql-postgres-adapter` start at `0.1.0`.
 - No prototype code moves into filter.
 - **Version policy (owner, 2026-11-03):** every version change is a patch bump, so port-related commits use `fix:` types. Nothing is in production yet.
+- **Delivery (owner, 2026-11-04): option D, three PRs in this order.** See section 9.
 
 ## 1. Identity, stage and dependencies
 
@@ -24,22 +25,40 @@ Issue: [#34](https://github.com/sequeless/sequeless-prototype/issues/34). Map: [
 ## 3. Prerequisite refactors
 
 - **3.1 Version reset.** `pom.xml:7`, `filter-core/pom.xml:8` and `filter-sql-adapter/pom.xml:8` go from `1.0.0` to `0.1.0`. Standalone `chore:` commit. **Done** before the migration.
-- **3.2 Parent adoption. Resolved.** The module poms take `sequeless-build-parent` 0.1.3 from GitHub Packages, with the aggregator pattern of sequeless-template (the root `pom.xml` is parent-less; modules take the parent). A build proves it: CI `build / maven` is green on [#18](https://github.com/sequeless/sequeless-filter/pull/18), [#19](https://github.com/sequeless/sequeless-filter/pull/19) and `main` at `487091a`. The ANTLR, Spotless, surefire and JaCoCo configuration that the parent supplies is the parent's; the adapter keeps its own `ban-spring` enforcer rule.
+- **3.2 Parent adoption. Resolved.** The module poms take `sequeless-build-parent` 0.1.3 from GitHub Packages, with the aggregator pattern of sequeless-template (the root `pom.xml` is parent-less; modules take the parent). A build proves it: CI `build / maven` is green on [#18](https://github.com/sequeless/sequeless-filter/pull/18), [#19](https://github.com/sequeless/sequeless-filter/pull/19) and `main` at `487091a`. The adapter keeps its own `ban-spring` enforcer rule.
 - **3.3 Field-expression port (per #21). Design settled.**
 
-  The port lets a filter field resolve to a trusted SQL expression, not only to a quoted column. Three design questions were settled with the navigator:
+  The port lets a filter field resolve to a trusted SQL expression, not only to a quoted column.
 
-  1. **A field expression is a SqlFragment-shaped record** (trusted SQL text plus its own parameter list). The builder splices its text where the quoted column would go, and its parameters go before the operator's parameters. `ColumnMapping` is the trivial implementation: a quoted identifier with no parameters.
-  2. **The hooks take a sealed `Field`.** `QueryBuilder.binary` and `unary` take `Field` (a `Column` or an `Expression`) instead of a `String` column. `ColumnMapping` extends a new `FieldResolver` interface, whose default `resolve` wraps `columnFor` in a `Column`. This is breaking for `QueryBuilder` implementers and for `AnsiQueryBuilder` subclasses (see section 8). Nothing is in production, and the filter is pre-1.0.
-  3. **No per-field converter in this port.** The translator keeps one generic value converter (`convertValue`). The `Field` carries the typing: an `Expression` states its datatype in its SQL text, and a `Column` binds as the generic Java type. **This deviates from #21**, which says "plus a per-field value converter". A later port can add one additively when a field needs it. The in-repo JSONB analogue converts by value variant, not per field (`sequeless-adapter-persistence-postgres/.../PostgresQueryStore.java:506`), and the query port places conversion in core (`docs/architecture/query-port.md`, lines 54 to 67).
+  **Settled decisions**
 
-  **Operator semantics, unified across dialects (from #21):**
-  - `is not` (with a non-null value) is null-safe: `IS DISTINCT FROM ?`. A plain `<>` drops rows whose value is `NULL`, so `is not` never uses `<>`.
-  - The LIKE family (`contains`, `starts with`, `is like`, `is not like`) is case-insensitive. The ANSI default renders `UPPER(lhs) LIKE UPPER(?) ESCAPE '\'`. A literal `%`, `_` or `\` in a `contains` or `starts with` value is escaped. The `is like` value is left as the caller wrote it.
-  - `PostgresQueryBuilder` overrides only the LIKE hook, to `lhs ILIKE ? ESCAPE '\'`.
-  - These semantics are pinned by a contract in `filter-sql-testkit`, so each dialect is checked against the same assertions.
+  1. **A field expression is a SqlFragment-shaped record** (`SqlExpression`: trusted SQL text plus its own parameter list). The renderer splices its text where the quoted column would go. Its parameters go before the operator's parameters, and they repeat once for each place the operand appears in the SQL. `ColumnMapping` is the trivial implementation: a quoted identifier with no parameters.
+  2. **Port boundary.** `QueryBuilder.binary` and `unary` take a sealed `Field` (`Column` or `Expression`). Inside `AnsiQueryBuilder`, the final `binary`/`unary` turn the field into a `SqlExpression` in one private step (a `Column` is quoted, an `Expression` passes through), and the **protected render hooks take that `SqlExpression`**. Quoting stays in one place, so an override cannot skip the injection guard. `quoteIdentifier(String)` keeps its signature.
+  3. **Resolution.** `FieldResolver` (new) resolves a path to `Optional<Field>`. `ColumnMapping` extends it, with a default `resolve` that wraps `columnFor` in a `Column`. `FilterQueryTranslator.translate` takes a `FieldResolver`, so existing `ColumnMapping` callers still compile from source. Compiled callers must be rebuilt, because the descriptor changes.
+  4. **No per-field value converter in this port.** The translator keeps one generic converter (`convertValue`). The `Field` carries the typing: an `Expression` states its datatype in its SQL text, and a `Column` binds as the generic Java type. **This deviates from #21**, which says "plus a per-field value converter". A later port can add one additively. The in-repo JSONB analogue converts by value variant, not per field (`sequeless-adapter-persistence-postgres/.../PostgresQueryStore.java:506`), and the query port places conversion in core (`docs/architecture/query-port.md`, lines 54 to 67).
+  5. **Case folding is `UPPER`.** #21 wrote `LOWER`. The contract pins `UPPER`, the form that the ANSI default renders.
 
-  **Consequence:** `contains`, `starts with` and the LIKE family change behaviour (case, and escaping of literal wildcards). That is a `fix:` under the version policy and is recorded here.
+  **Operator semantics: null-safe complements (owner decision, 2026-11-04)**
+
+  Each negated operator is the exact complement of its positive twin over all rows (`is`/`is not`, `is like`/`is not like`, `exists`/`does not exist`). A null filter value means SQL NULL only where "equals NULL" has a meaning; elsewhere it is rejected.
+
+  | Operator | Rendering (ANSI) | NULL rows | Null filter value |
+  |---|---|---|---|
+  | `is` | `lhs = ?` | dropped (unchanged) | `lhs IS NULL` (unchanged) |
+  | `is not` | `lhs IS DISTINCT FROM ?` | **included** (change) | `lhs IS NOT NULL` (unchanged) |
+  | `is greater than`, `>=`, `<`, `<=` | `lhs op ?` | dropped | **rejected**: `SqlRenderException` (change) |
+  | `contains`, `starts with`, `is like` | `UPPER(lhs) LIKE UPPER(?) ESCAPE '\'` | dropped | **rejected** (change) |
+  | `is not like` | `(lhs IS NULL OR UPPER(lhs) NOT LIKE UPPER(?) ESCAPE '\')` | **included** (change) | **rejected** (change) |
+  | `is in` | `lhs IN (non-null members)`, plus `OR lhs IS NULL` when a member is null | dropped, unless a member is null (change) | all members null: `lhs IS NULL` |
+  | `exists`, `does not exist` | `lhs IS NOT NULL` / `lhs IS NULL` | unchanged | n/a |
+
+  - `contains`, `starts with` and the LIKE family are case-insensitive. A literal `%`, `_` or `\` in a `contains` or `starts with` value is escaped. The `is like` value is left as the caller wrote it, so a trailing `\` is the caller's, and it is a known dialect difference (section 9, PR 2).
+  - `is` stays case-sensitive. The docs state this asymmetry with the LIKE family.
+  - `is in [a, b]` equals `is a or is b`.
+  - `PostgresQueryBuilder` overrides only the LIKE hook, to `lhs ILIKE ? ESCAPE '\'`, and the `is not like` NULL form for Postgres.
+  - filter-core stays unchanged. The rejection is made by the ANSI builder and pinned by the testkit contract.
+
+  **Known out-of-scope bug (filter-core, not this spec):** `is not null` and `is null` are registered as aliases of `is` (`BuiltinOperatorContributor.java:18`), so a filter built in code with `is not null` renders `IS NULL`. The DSL cannot reach it, because the lexer turns `null` into the NULL token. Track it as a separate `fix:` issue.
 
 ## 4. Package names
 
@@ -54,10 +73,11 @@ Issue: [#34](https://github.com/sequeless/sequeless-prototype/issues/34). Map: [
 |---|---|---|---|
 | `filter-core` | 0.1.3 | existing, unchanged by the port | none |
 | `filter-sql-adapter` | 0.1.3 → 0.1.4 (fix) | existing, ported (3.3) | `filter-core` |
-| `filter-sql-testkit` | 0.1.0 | new | `filter-sql-adapter` (compile); JUnit, AssertJ (test) |
-| `filter-sql-postgres-adapter` | 0.1.0 | new | `filter-sql-adapter` (compile); `filter-sql-testkit` (test) |
+| `filter-sql-testkit` | 0.1.0 | new | `filter-sql-adapter` (compile); JUnit and AssertJ at **compile** scope (the contract is in `src/main`, so they must propagate); H2 (test, for the ANSI contract run) |
+| `filter-sql-postgres-adapter` | 0.1.0 | new | `filter-sql-adapter` (compile); `filter-sql-testkit` (test); Testcontainers `postgres` and the `org.postgresql` driver (test, for the `*ContractIT`) |
 
-- There is no cycle: `filter-sql-adapter`'s own tests do not use the testkit. The contract tests for the ANSI builder live in `filter-sql-testkit`'s test sources, where the testkit depends on the adapter.
+- There is no cycle. `filter-sql-adapter`'s own tests do not use the testkit (Maven rejects a reactor cycle whatever the scope). The ANSI contract run lives in `filter-sql-testkit`'s test sources.
+- Each Postgres contract run is an `*IT` class, so failsafe runs it. The prototype already does this with `postgres:18` through Testcontainers, and it is green in CI.
 - No dependency on sequeless-prototype code.
 
 ## 6. Release config
@@ -71,25 +91,31 @@ Issue: [#34](https://github.com/sequeless/sequeless-prototype/issues/34). Map: [
 
 ## 7. CI and workflows
 
-- `.github/workflows/ci.yml` and `codeql.yml` use the sequeless-build reusable workflows at `workflows-v0.1.2`. **Resolved:** the pins are current (checked 2026-11-04).
+- `.github/workflows/ci.yml` and `codeql.yml` use the sequeless-build reusable workflows at `workflows-v0.1.2`. **Resolved:** the pins are current (checked 2026-11-04). The reusable workflow runs `mvn -B -ntp verify` on `ubuntu-latest` with failsafe enabled, so the Testcontainers ITs run in CI (verified by the prototype's runs on the same workflow).
 - `.github/workflows/release.yml` is a release-please workflow using `maven-release.yml` at `workflows-v0.1.2`.
 
 ## 8. ADRs
 
-- **ADR 0002, field-expression port** (`docs/adr/0002-field-expression-port.md`): records section 3.3's three decisions, the breaking change to `QueryBuilder`, and the deviation from #21 (no per-field converter). Status `accepted` once merged.
-- **Breaking for subclasses:** `AnsiQueryBuilder`'s protected hooks take `Field`, so an external subclass must update its overrides. The known subclasses in this repo are `H2QueryBuilder` (`filter-sql-adapter`'s tests) and the anonymous `AnsiQueryBuilder` in `DefaultFilterQueryTranslatorTest` (line 330). Both are updated in the port's PR.
+- **ADR 0002, field-expression port** (`docs/adr/0002-field-expression-port.md`): records section 3.3's decisions, the signature split (`Field` at the port, `SqlExpression` at the hooks), the breaking changes, the null-safe complement rules and the deferred per-field converter.
+- **Breaking for subclasses:** the protected hooks of `AnsiQueryBuilder` take `SqlExpression`, so an external subclass must update its overrides. An override without `@Override` does not fail to compile, and it silently stops being called. The release note says so. The known subclass in this repo is the anonymous `AnsiQueryBuilder` in `DefaultFilterQueryTranslatorTest` (line 330), which PR 1 updates. `H2QueryBuilder` overrides only `quoteIdentifier(String)`, which keeps its signature, so it is unaffected.
 
-## 9. Implementation order
+## 9. Implementation order (option D, three PRs)
 
-1. This design: the spec section 3.3 and ADR 0002 (docs PR).
-2. The port in `filter-sql-adapter`: `SqlExpression`, `Field`, `FieldResolver`, `ColumnMapping extends FieldResolver`, the `QueryBuilder` and `AnsiQueryBuilder` hooks, the translator, and the existing tests, which change where the behaviour changes. Verified by `./mvnw -B verify`.
-3. `filter-sql-testkit`: the abstract `QueryBuilderContract` and its ANSI test.
-4. `filter-sql-postgres-adapter`: `PostgresQueryBuilder` (ILIKE), tested with the contract.
-5. Release: the release-please config for the two new packages, the root aggregator's modules, the BOM update in `sequeless-build`.
+1. **PR 1, the port with the current operator semantics.** `SqlExpression`, `Field`, `FieldResolver`, `ColumnMapping extends FieldResolver`, `QueryBuilder` taking `Field`, the `AnsiQueryBuilder` hooks taking `SqlExpression`, the translator on `FieldResolver`. Existing assertions are unchanged, except the one compile fix at line 330. New tests cover an `Expression`: its text is spliced, and its parameters come first. No behaviour change. `./mvnw -B verify`.
+2. **PR 2, the unified semantics with `filter-sql-testkit`.** The null-safe complement rules in the table above, and the case-insensitive LIKE family with escaping. The contract is written for the new semantics and fails against the current ANSI builder, then passes. The six assertions that pin the old SQL (`<>`, `LIKE`, `NOT LIKE`) change here, with `docs/sql-adapter.md` (lines 143 to 161 and 206). The ANSI contract runs on H2 in-memory.
+3. **PR 3, `filter-sql-postgres-adapter`, the release config and the BOM.** `PostgresQueryBuilder` (ILIKE, and the Postgres `is not like` form), its `*ContractIT` on Testcontainers `postgres:18`, the release-please config for the two new packages, and the `sequeless-build` BOM update.
 
-## 10. Definition of done
+**Ordering risk and mitigation:** if the release-please PR merges between PR 1 and PR 2, 0.1.4 ships the breaking hooks with the old semantics. Hold the release-please PR until PR 3 merges, so `filter-sql-adapter` still ships as one 0.1.4.
 
-- The filter's CI is green on its branch (`./mvnw -B verify`, since filter has `mvnw`).
+## 10. Evidence and what is not verified
+
+- **Checked with H2 2.3.232 (standalone SQL, not the builder's output):** `IS DISTINCT FROM` and `<>` return the same rows when no status is NULL. A trailing escape in a LIKE pattern returns NULL, with no error. `ILIKE` and `ESCAPE '\'` parse on H2.
+- **Not checked on Postgres:** `ILIKE` over non-ASCII text (folding differs from `UPPER` for ß, Kelvin sign and İ), and the error for a trailing escape character ("LIKE pattern must not end with escape character", from memory). These are the reasons the Postgres dialect runs its own `*ContractIT` on Testcontainers rather than relying on H2.
+- **Consumers:** no repository outside sequeless-filter depends on `filter-sql-adapter` (checked across the sibling clones and the BOM). The break is confined to the in-repo subclasses.
+
+## 11. Definition of done
+
+- Each PR: `./mvnw -B verify` is green on its branch.
 - The prototype's CI is green against released artifacts, not a SNAPSHOT. The prototype does not consume filter yet, so its `main` CI is the check (owner approval for the cut-over is a separate step).
 - The release and BOM re-release: the filter release, then the `sequeless-bom` patch release.
 - Issue #34 is closed after the release and BOM re-release are done. The closing comment links them.

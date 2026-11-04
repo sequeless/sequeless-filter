@@ -16,7 +16,8 @@
 
 ## Consequences
 
-- **Breaking for `QueryBuilder` implementers and `AnsiQueryBuilder` subclasses.** Their `Field` and operand signatures change. The repo's known subclasses are `H2QueryBuilder` and one anonymous subclass in `DefaultFilterQueryTranslatorTest`; both are updated. The filter is pre-1.0 and nothing is in production, so this is accepted. The owner's version policy records it as a patch.
+- **Breaking for `QueryBuilder` implementers and `AnsiQueryBuilder` subclasses.** `QueryBuilder.binary` and `unary` take `Field`, and the protected hooks take `SqlExpression`. An external subclass must update its overrides, and an override without `@Override` silently stops being called. In this repo, the anonymous subclass in `DefaultFilterQueryTranslatorTest` (line 330) is updated. `H2QueryBuilder` overrides only `quoteIdentifier(String)`, which keeps its signature, so it is unaffected. The filter is pre-1.0 and nothing is in production, so this is accepted; the owner's version policy records it as a patch.
+- **NULL rules (owner decision, 2026-11-04):** each negated operator is the exact complement of its positive twin. `is not` and `is not like` include NULL rows, and `is in` with a null member also matches `IS NULL`. A null filter value is rejected for comparisons and the LIKE family, and it means SQL NULL only for `is` and `is not`. See spec section 3.3 for the table.
 - `ColumnMapping` callers are unchanged, because `ColumnMapping` is a `FieldResolver`.
 - `is not` becomes null-safe (`IS DISTINCT FROM`), and the LIKE family becomes case-insensitive and escapes literal wildcards. Existing filters that relied on `<>` or case-sensitive matching change behaviour. The change is recorded in the release notes.
 - The JSONB centre can later render its property-IRI bind before the value bind, because the parameter order is decided by the builder, not by the translator.
