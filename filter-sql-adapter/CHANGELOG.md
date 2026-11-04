@@ -3,6 +3,15 @@
 * The following workspace dependencies were updated
     * org.sequeless:filter-core bumped to 0.1.2
 
+## [0.1.4](https://github.com/sequeless/sequeless-filter/compare/filter-sql-adapter-v0.1.3...filter-sql-adapter-v0.1.4) (2026-11-04)
+
+
+### Bug Fixes
+
+* **filter-sql-adapter:** render fields through a sealed Field and a trusted expression ([f106056](https://github.com/sequeless/sequeless-filter/commit/f1060561313bd47bef2f9c92d27c3fd2f5a78b25))
+* **filter-sql-adapter:** unify operator semantics and add filter-sql-testkit ([c0e68bf](https://github.com/sequeless/sequeless-filter/commit/c0e68bfef58e184d54f2e886bf1239d22490b919))
+* **filter-sql-postgres-adapter:** add the PostgreSQL QueryBuilder with ILIKE ([481ce0b](https://github.com/sequeless/sequeless-filter/commit/481ce0b7217a9f22e6b36d290c97eb170ceaf276))
+
 ## [0.1.3](https://github.com/sequeless/sequeless-filter/compare/filter-sql-adapter-v0.1.2...filter-sql-adapter-v0.1.3) (2026-11-04)
 
 
