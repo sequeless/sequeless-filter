@@ -5,9 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -198,31 +196,24 @@ public abstract class QueryBuilderContract {
     }
 
     private List<Integer> matchBinary(String column, String operator, Object value) throws SQLException {
-        return run(builder().binary(new Field.Column(column), op(operator), value));
+        return matchingIds(builder().binary(new Field.Column(column), op(operator), value));
     }
 
     private List<Integer> matchUnary(String column, String operator) throws SQLException {
-        return run(builder().unary(new Field.Column(column), op(operator)));
+        return matchingIds(builder().unary(new Field.Column(column), op(operator)));
     }
 
-    /** Runs {@code WHERE <fragment>} against the fixtures and returns the matching ids, in order. */
-    private List<Integer> run(SqlFragment fragment) throws SQLException {
-        try (Connection c = connect();
-                PreparedStatement ps = c.prepareStatement(
-                        "SELECT \"id\" FROM " + TABLE + " WHERE " + fragment.sql() + " ORDER BY \"id\"")) {
-            List<Object> params = fragment.parameters();
-            for (int i = 0; i < params.size(); i++) {
-                ps.setObject(i + 1, params.get(i));
-            }
-            List<Integer> ids = new ArrayList<>();
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    ids.add(rs.getInt(1));
-                }
-            }
-            return ids;
-        }
-    }
+    /**
+     * Runs the rendered condition against the fixture table and returns the matching ids, in
+     * ascending order. The subclass owns the query: it selects {@code "id"} from {@value #TABLE}
+     * {@code WHERE} the fragment's SQL, binding the fragment's parameters in order. The contract
+     * asserts only which fixture rows match.
+     *
+     * @param fragment the rendered condition, with its positional parameters
+     * @return the ids of the matching fixture rows, in ascending order
+     * @throws SQLException if the query fails
+     */
+    protected abstract List<Integer> matchingIds(SqlFragment fragment) throws SQLException;
 
     private static void insert(Connection c, int id, String name, String status, Integer age) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement(
