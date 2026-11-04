@@ -39,6 +39,8 @@ import org.sequeless.filter.sql.api.SqlRenderException;
  */
 public class AnsiQueryBuilder implements QueryBuilder {
 
+    private static final String IS_NULL = " IS NULL";
+
     @Override
     public final SqlFragment binary(Field field, OperatorDefinition operator, Object value) {
         SqlExpression operand = operand(field);
@@ -136,7 +138,7 @@ public class AnsiQueryBuilder implements QueryBuilder {
      */
     protected SqlFragment renderIs(SqlExpression operand, boolean negated, Object value) {
         if (value == null) {
-            return new SqlFragment(operand.sql() + (negated ? " IS NOT NULL" : " IS NULL"), operand.parameters());
+            return new SqlFragment(operand.sql() + (negated ? " IS NOT NULL" : IS_NULL), operand.parameters());
         }
         return new SqlFragment(operand.sql() + (negated ? " IS DISTINCT FROM ?" : " = ?"), bind(operand, value));
     }
@@ -231,7 +233,7 @@ public class AnsiQueryBuilder implements QueryBuilder {
         List<Object> members = values.stream().filter(Objects::nonNull).toList();
         if (members.isEmpty()) {
             // Only null members: 'is in [null]' means the field is NULL.
-            return new SqlFragment(operand.sql() + " IS NULL", operand.parameters());
+            return new SqlFragment(operand.sql() + IS_NULL, operand.parameters());
         }
         String placeholders = String.join(", ", members.stream().map(v -> "?").toList());
         List<Object> parameters = new ArrayList<>(operand.parameters());
@@ -255,7 +257,7 @@ public class AnsiQueryBuilder implements QueryBuilder {
      * @return the rendered fragment
      */
     protected SqlFragment renderExists(SqlExpression operand, boolean negated) {
-        return new SqlFragment(operand.sql() + (negated ? " IS NULL" : " IS NOT NULL"), operand.parameters());
+        return new SqlFragment(operand.sql() + (negated ? IS_NULL : " IS NOT NULL"), operand.parameters());
     }
 
     /**
