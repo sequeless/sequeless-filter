@@ -20,6 +20,7 @@
 
   <properties>
     <maven.compiler.release>25</maven.compiler.release>
+    <sequeless.github.repository>sequeless-filter</sequeless.github.repository>
     <lombok.version>1.18.48</lombok.version>
     <antlr4.version>4.13.2</antlr4.version>
     <jackson-databind.version>2.18.3</jackson-databind.version>
