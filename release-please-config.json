@@ -17,6 +17,18 @@
       "component": "filter-sql-adapter",
       "versioning": "always-bump-patch",
       "skip-snapshot": true
+    },
+    "filter-sql-testkit": {
+      "component": "filter-sql-testkit",
+      "initial-version": "0.1.0",
+      "versioning": "always-bump-patch",
+      "skip-snapshot": true
+    },
+    "filter-sql-postgres-adapter": {
+      "component": "filter-sql-postgres-adapter",
+      "initial-version": "0.1.0",
+      "versioning": "always-bump-patch",
+      "skip-snapshot": true
     }
   }
 }
