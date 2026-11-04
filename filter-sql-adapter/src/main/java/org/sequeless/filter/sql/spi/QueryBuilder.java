@@ -2,6 +2,7 @@ package org.sequeless.filter.sql.spi;
 
 import java.util.List;
 import org.sequeless.filter.api.OperatorDefinition;
+import org.sequeless.filter.sql.api.Field;
 import org.sequeless.filter.sql.api.FilterQueryTranslator;
 import org.sequeless.filter.sql.api.SqlFragment;
 
@@ -31,28 +32,28 @@ import org.sequeless.filter.sql.api.SqlFragment;
 public interface QueryBuilder {
 
     /**
-     * Renders a binary condition: a column, an operator, and a value.
+     * Renders a binary condition: a field, an operator, and a value.
      *
      * <p>{@code value} is the already-converted Java value — a {@link String}, a boxed
      * {@link Number}, a {@link Boolean}, {@code null} (meaning SQL {@code NULL}), or a
      * {@code List<Object>} for a list-shaped operator such as {@code is in}.
      *
-     * @param column   the resolved SQL column name
+     * @param field    the resolved field: a plain column, which the dialect quotes, or a trusted expression
      * @param operator the operator being applied; never one for which {@link OperatorDefinition#isUnary()} is true
      * @param value    the already-converted value (never itself a raw {@code JsonNode})
      * @return the rendered fragment
      */
-    SqlFragment binary(String column, OperatorDefinition operator, Object value);
+    SqlFragment binary(Field field, OperatorDefinition operator, Object value);
 
     /**
-     * Renders a unary condition: a column and an operator that takes no value (e.g. {@code exists}
+     * Renders a unary condition: a field and an operator that takes no value (e.g. {@code exists}
      * / {@code does not exist}).
      *
-     * @param column   the resolved SQL column name
+     * @param field    the resolved field
      * @param operator the operator being applied; always one for which {@link OperatorDefinition#isUnary()} is true
      * @return the rendered fragment
      */
-    SqlFragment unary(String column, OperatorDefinition operator);
+    SqlFragment unary(Field field, OperatorDefinition operator);
 
     /**
      * Combines fragments with SQL {@code AND}.

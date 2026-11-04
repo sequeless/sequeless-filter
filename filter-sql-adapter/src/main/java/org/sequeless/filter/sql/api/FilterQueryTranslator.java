@@ -13,7 +13,7 @@ import org.sequeless.filter.sql.spi.QueryBuilder;
  * every vendor-specific rendering decision to an injected {@link QueryBuilder}.
  *
  * <p>This is the vendor-agnostic core of the hexagonal design: it walks the tree (as a
- * {@link FilterVisitor}), resolves each field path via a {@link ColumnMapping}, converts each
+ * {@link FilterVisitor}), resolves each field path via a {@link FieldResolver}, converts each
  * {@link com.fasterxml.jackson.databind.JsonNode} value to a plain Java value, and hands the
  * result to the supplied {@link QueryBuilder} port — but never renders SQL text itself.
  *
@@ -26,7 +26,7 @@ import org.sequeless.filter.sql.spi.QueryBuilder;
  *       automatically, so this is the only place that guarantee is actually enforced for callers
  *       of the SQL adapter. Any reported violation is converted to a {@link SqlRenderException}.
  *   <li>Walks the tree. For a {@link org.sequeless.filter.api.FieldFilter}, resolves
- *       {@code path} via {@code columns}, raising {@link SqlRenderException} if unmapped, converts
+ *       {@code path} via {@code resolver}, raising {@link SqlRenderException} if unmapped, converts
  *       {@code value} to a plain Java object, and dispatches to {@link QueryBuilder#binary} or
  *       {@link QueryBuilder#unary} — by the resolved operator's
  *       {@link org.sequeless.filter.api.OperatorDefinition#isUnary()}, <em>never</em> by whether
@@ -64,9 +64,10 @@ public interface FilterQueryTranslator {
     /**
      * Translates {@code node} into a single SQL fragment.
      *
-     * @param node    the filter AST to translate; may be untrusted or deserialized input — this
-     *                method validates it itself and does not assume it was validated upstream
-     * @param columns resolves field paths to SQL column names
+     * @param node     the filter AST to translate; may be untrusted or deserialized input — this
+     *                 method validates it itself and does not assume it was validated upstream
+     * @param resolver resolves field paths to fields: a plain column ({@link ColumnMapping}) or a
+     *                 trusted expression
      * @param fields  field registry used both for {@link FilterValidator} and for
      *                {@code any}-expansion's field-compatibility lookup
      * @param ops     operator registry used both for {@link FilterValidator} and for resolving
@@ -80,5 +81,5 @@ public interface FilterQueryTranslator {
      *                             {@code JsonNode} subtype
      */
     SqlFragment translate(
-            FilterNode node, ColumnMapping columns, FieldRegistry fields, OperatorRegistry ops, QueryBuilder builder);
+            FilterNode node, FieldResolver resolver, FieldRegistry fields, OperatorRegistry ops, QueryBuilder builder);
 }

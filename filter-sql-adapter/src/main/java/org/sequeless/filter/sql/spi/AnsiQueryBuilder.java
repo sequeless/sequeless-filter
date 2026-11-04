@@ -3,30 +3,34 @@ package org.sequeless.filter.sql.spi;
 import java.util.ArrayList;
 import java.util.List;
 import org.sequeless.filter.api.OperatorDefinition;
+import org.sequeless.filter.sql.api.Field;
+import org.sequeless.filter.sql.api.SqlExpression;
 import org.sequeless.filter.sql.api.SqlFragment;
 import org.sequeless.filter.sql.api.SqlRenderException;
 
 /**
  * ANSI SQL default {@link QueryBuilder} implementation, structured as a Template Method.
  *
- * <p>{@link #binary} and {@link #unary} are {@code final} dispatchers: they inspect the
- * operator's canonical name and delegate to one of eight {@code protected} hooks, each owning one
- * rendering concern. A vendor that needs to change only one concern — say, {@code LIKE} escaping,
- * or identifier quoting — extends this class and overrides just that hook, rather than
- * reimplementing the full 13-operator dispatch from scratch.
+ * <p>{@link #binary} and {@link #unary} are {@code final} dispatchers. They turn the {@link Field}
+ * into an operand (a {@link SqlExpression}: a quoted identifier for a column, or the trusted
+ * expression as-is), inspect the operator's canonical name, and delegate to one of eight
+ * {@code protected} hooks. Each hook owns one rendering concern and receives the operand, so a
+ * vendor overrides only the hook it needs, and quoting stays in one place.
  *
- * <p>This is the complete, fixed hook set — not a starting point meant to accrete further
- * overloads:
+ * <p>The operand's parameters are placed before the hook's own parameters, and repeated once for
+ * each place the operand appears in the rendered SQL (spec 6, section 3.3).
+ *
+ * <p>This is the complete, fixed hook set:
  *
  * <ul>
  *   <li>{@link #quoteIdentifier(String)}
- *   <li>{@link #renderIs(String, boolean, Object)}
- *   <li>{@link #renderComparison(String, OperatorDefinition, Object)}
- *   <li>{@link #renderLike(String, OperatorDefinition, Object)}
- *   <li>{@link #renderIn(String, List)}
- *   <li>{@link #renderExists(String, boolean)}
- *   <li>{@link #renderUnknown(String, OperatorDefinition, Object)}
- *   <li>{@link #unaryUnknown(String, OperatorDefinition)}
+ *   <li>{@link #renderIs(SqlExpression, boolean, Object)}
+ *   <li>{@link #renderComparison(SqlExpression, OperatorDefinition, Object)}
+ *   <li>{@link #renderLike(SqlExpression, OperatorDefinition, Object)}
+ *   <li>{@link #renderIn(SqlExpression, List)}
+ *   <li>{@link #renderExists(SqlExpression, boolean)}
+ *   <li>{@link #renderUnknown(SqlExpression, OperatorDefinition, Object)}
+ *   <li>{@link #unaryUnknown(SqlExpression, OperatorDefinition)}
  * </ul>
  *
  * <p><strong>Implementations are expected to be stateless and thread-safe</strong> — this class
@@ -35,36 +39,44 @@ import org.sequeless.filter.sql.api.SqlRenderException;
 public class AnsiQueryBuilder implements QueryBuilder {
 
     @Override
-    public final SqlFragment binary(String column, OperatorDefinition operator, Object value) {
-        String quoted = quoteIdentifier(column);
+    public final SqlFragment binary(Field field, OperatorDefinition operator, Object value) {
+        SqlExpression operand = operand(field);
         return switch (operator.getCanonicalName()) {
-            case "is" -> renderIs(quoted, false, value);
-            case "is not" -> renderIs(quoted, true, value);
+            case "is" -> renderIs(operand, false, value);
+            case "is not" -> renderIs(operand, true, value);
             case "is greater than", "is greater than or equal to", "is less than", "is less than or equal to" ->
-                renderComparison(quoted, operator, value);
-            case "contains", "starts with", "is like", "is not like" -> renderLike(quoted, operator, value);
-            case "is in" -> renderIn(quoted, toValueList(column, operator, value));
-            default -> renderUnknown(quoted, operator, value);
+                renderComparison(operand, operator, value);
+            case "contains", "starts with", "is like", "is not like" -> renderLike(operand, operator, value);
+            case "is in" -> renderIn(operand, toValueList(operand, operator, value));
+            default -> renderUnknown(operand, operator, value);
         };
     }
 
     @Override
-    public final SqlFragment unary(String column, OperatorDefinition operator) {
-        String quoted = quoteIdentifier(column);
+    public final SqlFragment unary(Field field, OperatorDefinition operator) {
+        SqlExpression operand = operand(field);
         return switch (operator.getCanonicalName()) {
-            case "exists" -> renderExists(quoted, false);
-            case "does not exist" -> renderExists(quoted, true);
-            default -> unaryUnknown(quoted, operator);
+            case "exists" -> renderExists(operand, false);
+            case "does not exist" -> renderExists(operand, true);
+            default -> unaryUnknown(operand, operator);
+        };
+    }
+
+    /** A plain column is quoted as an identifier with no parameters; an expression is used as-is. */
+    private SqlExpression operand(Field field) {
+        return switch (field) {
+            case Field.Column column -> new SqlExpression(quoteIdentifier(column.name()), List.of());
+            case Field.Expression expression -> expression.expression();
         };
     }
 
     @SuppressWarnings("unchecked")
-    private static List<Object> toValueList(String column, OperatorDefinition operator, Object value) {
+    private static List<Object> toValueList(SqlExpression operand, OperatorDefinition operator, Object value) {
         if (value instanceof List<?> list) {
             return (List<Object>) list;
         }
         throw new SqlRenderException(
-                "Operator '" + operator.getCanonicalName() + "' on column '" + column + "' expects a list value");
+                "Operator '" + operator.getCanonicalName() + "' on column " + operand.sql() + " expects a list value");
     }
 
     @Override
@@ -113,28 +125,28 @@ public class AnsiQueryBuilder implements QueryBuilder {
      * Renders {@code is} / {@code is not}, including {@code IS NULL} / {@code IS NOT NULL} when
      * {@code value} is {@code null}.
      *
-     * @param column   already-quoted column identifier
+     * @param operand  the already-rendered field operand; its parameters come first
      * @param negated  {@code true} for {@code is not}, {@code false} for {@code is}
      * @param value    the already-converted value; {@code null} means SQL {@code NULL}
      * @return the rendered fragment
      */
-    protected SqlFragment renderIs(String column, boolean negated, Object value) {
+    protected SqlFragment renderIs(SqlExpression operand, boolean negated, Object value) {
         if (value == null) {
-            return new SqlFragment(column + (negated ? " IS NOT NULL" : " IS NULL"), List.of());
+            return new SqlFragment(operand.sql() + (negated ? " IS NOT NULL" : " IS NULL"), operand.parameters());
         }
-        return new SqlFragment(column + (negated ? " <> ?" : " = ?"), newList(value));
+        return new SqlFragment(operand.sql() + (negated ? " <> ?" : " = ?"), bind(operand, value));
     }
 
     /**
      * Renders one of the four numeric comparison operators ({@code is greater than}, {@code is
      * greater than or equal to}, {@code is less than}, {@code is less than or equal to}).
      *
-     * @param column   already-quoted column identifier
+     * @param operand  the already-rendered field operand; its parameters come first
      * @param operator the resolved operator
      * @param value    the already-converted comparison value
      * @return the rendered fragment
      */
-    protected SqlFragment renderComparison(String column, OperatorDefinition operator, Object value) {
+    protected SqlFragment renderComparison(SqlExpression operand, OperatorDefinition operator, Object value) {
         String sqlOperator = switch (operator.getCanonicalName()) {
             case "is greater than" -> ">";
             case "is greater than or equal to" -> ">=";
@@ -143,17 +155,15 @@ public class AnsiQueryBuilder implements QueryBuilder {
             default ->
                 throw new SqlRenderException("Unsupported comparison operator: '" + operator.getCanonicalName() + "'");
         };
-        return new SqlFragment(column + " " + sqlOperator + " ?", newList(value));
+        return new SqlFragment(operand.sql() + " " + sqlOperator + " ?", bind(operand, value));
     }
 
     /**
      * Renders {@code contains} / {@code starts with} / {@code is like} / {@code is not like}.
      *
      * <p>Escaping of literal {@code %} / {@code _} characters already present in {@code value} is
-     * <strong>not</strong> performed by this default implementation — matching semantics for such
-     * values are left to each vendor's discretion (see {@code QueryBuilder}'s Javadoc). This
-     * implementation uses a plain ANSI {@code LIKE} / {@code NOT LIKE} with the wildcard placed
-     * according to the operator:
+     * <strong>not</strong> performed by this default implementation (the unified semantics of spec
+     * 6, section 3.3 come in a later change). The wildcard is placed according to the operator:
      *
      * <ul>
      *   <li>{@code contains}: {@code %value%}
@@ -162,12 +172,12 @@ public class AnsiQueryBuilder implements QueryBuilder {
      *   <li>{@code is not like}: same as {@code is like}, negated
      * </ul>
      *
-     * @param column   already-quoted column identifier
+     * @param operand  the already-rendered field operand; its parameters come first
      * @param operator the resolved operator
      * @param value    the already-converted string value
      * @return the rendered fragment
      */
-    protected SqlFragment renderLike(String column, OperatorDefinition operator, Object value) {
+    protected SqlFragment renderLike(SqlExpression operand, OperatorDefinition operator, Object value) {
         String pattern = switch (operator.getCanonicalName()) {
             case "contains" -> "%" + value + "%";
             case "starts with" -> value + "%";
@@ -176,31 +186,34 @@ public class AnsiQueryBuilder implements QueryBuilder {
                 throw new SqlRenderException("Unsupported LIKE-family operator: '" + operator.getCanonicalName() + "'");
         };
         boolean negated = "is not like".equals(operator.getCanonicalName());
-        return new SqlFragment(column + (negated ? " NOT LIKE ?" : " LIKE ?"), newList(pattern));
+        return new SqlFragment(operand.sql() + (negated ? " NOT LIKE ?" : " LIKE ?"), bind(operand, pattern));
     }
 
     /**
-     * Renders {@code is in}, expanding to {@code column IN (?, ?, …)}.
+     * Renders {@code is in}, expanding to {@code operand IN (?, ?, …)}.
      *
-     * @param column already-quoted column identifier
-     * @param values the already-converted, non-empty member list (the translator rejects an empty
-     *               list-shaped value before it would reach this hook)
+     * @param operand the already-rendered field operand; its parameters come first
+     * @param values  the already-converted, non-empty member list (the translator rejects an empty
+     *                list-shaped value before it would reach this hook)
      * @return the rendered fragment
      */
-    protected SqlFragment renderIn(String column, List<Object> values) {
+    protected SqlFragment renderIn(SqlExpression operand, List<Object> values) {
         String placeholders = String.join(", ", values.stream().map(v -> "?").toList());
-        return new SqlFragment(column + " IN (" + placeholders + ")", new ArrayList<>(values));
+        List<Object> parameters = new ArrayList<>(operand.parameters());
+        parameters.addAll(values);
+        return new SqlFragment(operand.sql() + " IN (" + placeholders + ")", parameters);
     }
 
     /**
-     * Renders the unary {@code exists} / {@code does not exist} pair, with no bind parameter.
+     * Renders the unary {@code exists} / {@code does not exist} pair, with no bind parameter of
+     * its own.
      *
-     * @param column  already-quoted column identifier
+     * @param operand the already-rendered field operand
      * @param negated {@code true} for {@code does not exist}, {@code false} for {@code exists}
      * @return the rendered fragment
      */
-    protected SqlFragment renderExists(String column, boolean negated) {
-        return new SqlFragment(column + (negated ? " IS NULL" : " IS NOT NULL"), List.of());
+    protected SqlFragment renderExists(SqlExpression operand, boolean negated) {
+        return new SqlFragment(operand.sql() + (negated ? " IS NULL" : " IS NOT NULL"), operand.parameters());
     }
 
     /**
@@ -209,34 +222,35 @@ public class AnsiQueryBuilder implements QueryBuilder {
      * <p>Throws {@link SqlRenderException} by default; a vendor supporting a custom operator
      * overrides this hook rather than reimplementing {@link #binary}'s dispatch.
      *
-     * @param column   already-quoted column identifier
+     * @param operand  the already-rendered field operand
      * @param operator the unrecognized operator
      * @param value    the already-converted value
      * @return never returns normally in the default implementation
      * @throws SqlRenderException always, unless overridden
      */
-    protected SqlFragment renderUnknown(String column, OperatorDefinition operator, Object value) {
+    protected SqlFragment renderUnknown(SqlExpression operand, OperatorDefinition operator, Object value) {
         throw new SqlRenderException(
-                "No ANSI rendering for operator '" + operator.getCanonicalName() + "' on column " + column);
+                "No ANSI rendering for operator '" + operator.getCanonicalName() + "' on column " + operand.sql());
     }
 
     /**
      * Fallback twin of {@link #renderUnknown} for unary operators outside the built-in
      * {@code exists} / {@code does not exist} pair.
      *
-     * @param column   already-quoted column identifier
+     * @param operand  the already-rendered field operand
      * @param operator the unrecognized unary operator
      * @return never returns normally in the default implementation
      * @throws SqlRenderException always, unless overridden
      */
-    protected SqlFragment unaryUnknown(String column, OperatorDefinition operator) {
-        throw new SqlRenderException(
-                "No ANSI rendering for unary operator '" + operator.getCanonicalName() + "' on column " + column);
+    protected SqlFragment unaryUnknown(SqlExpression operand, OperatorDefinition operator) {
+        throw new SqlRenderException("No ANSI rendering for unary operator '" + operator.getCanonicalName()
+                + "' on column " + operand.sql());
     }
 
-    private static List<Object> newList(Object value) {
-        List<Object> list = new ArrayList<>();
-        list.add(value);
-        return list;
+    /** The operand's parameters followed by {@code value}: the order the SQL text binds them in. */
+    private static List<Object> bind(SqlExpression operand, Object value) {
+        List<Object> parameters = new ArrayList<>(operand.parameters());
+        parameters.add(value);
+        return parameters;
     }
 }

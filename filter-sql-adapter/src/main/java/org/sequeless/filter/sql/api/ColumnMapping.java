@@ -16,7 +16,7 @@ import java.util.Optional;
  * built-in way to synthesize the join itself.
  */
 @FunctionalInterface
-public interface ColumnMapping {
+public interface ColumnMapping extends FieldResolver {
 
     /**
      * Resolves {@code path} to a column name.
@@ -25,6 +25,17 @@ public interface ColumnMapping {
      * @return the column name to use in generated SQL, or empty if {@code path} has no mapping
      */
     Optional<String> columnFor(String path);
+
+    /**
+     * Every column mapping is a field resolver whose fields are plain {@link Field.Column}s.
+     *
+     * @param path dot-notation field path, as it appears in the filter AST
+     * @return the column for {@code path}, or empty if {@code path} has no mapping
+     */
+    @Override
+    default Optional<Field> resolve(String path) {
+        return columnFor(path).map(Field.Column::new);
+    }
 
     /**
      * A mapping under which every path resolves to a column of the same name.
