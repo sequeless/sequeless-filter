@@ -16,5 +16,5 @@ concurrency:
 
 jobs:
   build:
-    uses: sequeless/sequeless-build/.github/workflows/maven-ci.yml@workflows-v0.1.2
+    uses: sequeless/sequeless-build/.github/workflows/maven-ci.yml@63bad368fc4122d19c8555293012ac58eb3b6fac # workflows-v0.1.2
     secrets: inherit
