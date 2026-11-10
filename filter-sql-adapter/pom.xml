@@ -11,7 +11,7 @@
 
   <groupId>org.sequeless</groupId>
   <artifactId>filter-sql-adapter</artifactId>
-  <version>0.1.4</version>
+  <version>0.1.5</version>
   <packaging>jar</packaging>
 
   <name>Sequeless Filter SQL Adapter</name>
@@ -35,7 +35,7 @@
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>filter-core</artifactId>
-      <version>0.1.3</version>
+      <version>0.1.4</version>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>

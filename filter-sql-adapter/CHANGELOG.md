@@ -3,6 +3,19 @@
 * The following workspace dependencies were updated
     * org.sequeless:filter-core bumped to 0.1.2
 
+## [0.1.5](https://github.com/sequeless/sequeless-filter/compare/filter-sql-adapter-v0.1.4...filter-sql-adapter-v0.1.5) (2026-11-10)
+
+
+### Bug Fixes
+
+* **deps:** pin jackson-annotations to 2.23 and byte-buddy to 1.18.17 ([b18788c](https://github.com/sequeless/sequeless-filter/commit/b18788caeb97817247772c5a6034a86f6fb1515d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+    * org.sequeless:filter-core bumped to 0.1.4
+
 ## [0.1.4](https://github.com/sequeless/sequeless-filter/compare/filter-sql-adapter-v0.1.3...filter-sql-adapter-v0.1.4) (2026-11-04)
 
 

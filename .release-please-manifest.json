@@ -1,6 +1,6 @@
 {
-  "filter-core": "0.1.3",
-  "filter-sql-adapter": "0.1.4",
-  "filter-sql-postgres-adapter": "0.1.0",
-  "filter-sql-testkit": "0.1.0"
+  "filter-core": "0.1.4",
+  "filter-sql-adapter": "0.1.5",
+  "filter-sql-postgres-adapter": "0.1.1",
+  "filter-sql-testkit": "0.1.1"
 }
