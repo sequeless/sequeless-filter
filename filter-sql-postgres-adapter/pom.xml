@@ -11,7 +11,7 @@
 
   <groupId>org.sequeless</groupId>
   <artifactId>filter-sql-postgres-adapter</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <packaging>jar</packaging>
 
   <name>Sequeless Filter SQL PostgreSQL Adapter</name>
@@ -31,19 +31,19 @@
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>filter-sql-adapter</artifactId>
-      <version>0.1.4</version>
+      <version>0.1.5</version>
     </dependency>
     <!-- The builder uses OperatorDefinition from filter-core directly, so it is declared here. -->
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>filter-core</artifactId>
-      <version>0.1.3</version>
+      <version>0.1.4</version>
     </dependency>
 
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>filter-sql-testkit</artifactId>
-      <version>0.1.0</version>
+      <version>0.1.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
