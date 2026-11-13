@@ -2,8 +2,8 @@
 
 ## Setup
 
-Requires JDK 21. The Maven wrapper (`./mvnw`) is committed, so no local Maven install is
-needed. A devcontainer (`.devcontainer/`) provides a ready JDK 21 toolchain.
+Requires JDK 25. The Maven wrapper (`./mvnw`) is committed, so no local Maven install is
+needed. A devcontainer (`.devcontainer/`) provides a ready JDK 25 toolchain.
 
 ```bash
 make verify    # confirm a green baseline

@@ -1,9 +1,9 @@
 {
   "name": "sequeless-filter",
-  "image": "mcr.microsoft.com/devcontainers/java:21-bookworm",
+  "image": "mcr.microsoft.com/devcontainers/java:25-bookworm",
   "features": {
     "ghcr.io/devcontainers/features/java:1": {
-      "version": "21",
+      "version": "25",
       "jdkDistro": "tem",
       "installMaven": "false"
     }
