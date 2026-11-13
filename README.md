@@ -18,7 +18,7 @@ rules, and completion behavior.
 
 ## Add it as a dependency
 
-Requires JDK 21.
+Requires JDK 25.
 
 ```xml
 <dependency>
