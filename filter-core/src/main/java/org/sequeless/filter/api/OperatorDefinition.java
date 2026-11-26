@@ -93,9 +93,9 @@ public class OperatorDefinition {
      * Operators with an empty {@code alsoAppliesToFormats} get no extra route. A {@code null} format
      * never takes the extra route.
      *
-     * <p>{@link FilterValidator} checks the type only for operators whose {@code applicableTypes} is
-     * non-empty or whose {@code alsoAppliesToFormats} is non-empty. Formats-only operators therefore
-     * still ignore the field format during validation.
+     * <p>{@link FilterValidator} calls this method only for operators whose {@code alsoAppliesToFormats}
+     * is non-empty. Every other operator keeps the type-only check, so its field format is ignored during
+     * validation.
      */
     public boolean appliesTo(String jsonSchemaType, String jsonSchemaFormat) {
         boolean typeMatches = applicableTypes.isEmpty() || applicableTypes.contains(jsonSchemaType);
