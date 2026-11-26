@@ -71,6 +71,17 @@ class DateComparisonValidationTest {
     }
 
     @Test
+    void plainStringFieldWithoutFormatRejectsEveryComparison() {
+        for (String op : List.of("gt", "gte", "lt", "lte")) {
+            List<FilterViolation> violations = validate(op, "string", null);
+            assertThat(violations).as(op).hasSize(1);
+            assertThat(violations.get(0).message())
+                    .as(op)
+                    .isEqualTo("Operator '" + op + "' is not applicable to type 'string'");
+        }
+    }
+
+    @Test
     void uriStringFieldRejectsGreaterThanOrEqual() {
         List<FilterViolation> violations = validate("gte", "string", "uri");
         assertThat(violations).hasSize(1);
@@ -107,7 +118,7 @@ class DateComparisonValidationTest {
     }
 
     @Test
-    void typedOperatorWithFormatIsCheckedAgainstFormatInValidator() {
+    void typedOperatorWithFormatKeepsItsTypeOnlyValidation() {
         OperatorDefinition withinLast = OperatorDefinition.builder()
                 .canonicalName("withinLast")
                 .syntax(Syntax.INFIX)
@@ -118,9 +129,11 @@ class DateComparisonValidationTest {
         OperatorRegistry customOps = OperatorRegistry.of(List.of(custom));
         FieldFilter filter = Filters.field("when", "withinLast", TextNode.valueOf("x"));
 
+        assertThat(FilterValidator.validate(filter, customOps, fieldRegistry("string", null)))
+                .isEmpty();
+        assertThat(FilterValidator.validate(filter, customOps, fieldRegistry("string", "uri")))
+                .isEmpty();
         assertThat(FilterValidator.validate(filter, customOps, fieldRegistry("string", "date-time")))
                 .isEmpty();
-        assertThat(FilterValidator.validate(filter, customOps, fieldRegistry("string", null)))
-                .hasSize(1);
     }
 }

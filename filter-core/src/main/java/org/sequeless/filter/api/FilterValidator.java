@@ -54,11 +54,7 @@ public final class FilterValidator {
         checkValueShape(f.path(), f.op(), op, f.value(), violations);
 
         fields.find(f.path()).ifPresent(fieldDef -> {
-            // Formats-only operators (no applicableTypes and no alsoAppliesToFormats) are not checked here,
-            // so their formats are ignored too. Every other operator must pass appliesTo.
-            boolean formatsOnly = op.getApplicableTypes().isEmpty()
-                    && op.getAlsoAppliesToFormats().isEmpty();
-            if (!formatsOnly && !op.appliesTo(fieldDef.getJsonSchemaType(), fieldDef.getJsonSchemaFormat())) {
+            if (!typeIsApplicable(op, fieldDef)) {
                 violations.add(new FilterViolation(
                         f.path(),
                         "Operator '" + f.op() + "' is not applicable to type '" + fieldDef.getJsonSchemaType() + "'"));
@@ -69,6 +65,19 @@ public final class FilterValidator {
                         f.path(), "Operator '" + f.op() + "' is not permitted for field '" + f.path() + "'"));
             }
         });
+    }
+
+    /**
+     * The validator's type check. An operator that declares {@code alsoAppliesToFormats} (the ordering
+     * comparisons) goes through {@link OperatorDefinition#appliesTo}, so a date or date-time format is
+     * accepted. Every other operator keeps the original type-only rule: an empty {@code applicableTypes}
+     * accepts any type, and the field format is ignored, so formats-only operators are never rejected here.
+     */
+    private static boolean typeIsApplicable(OperatorDefinition op, FieldDefinition fieldDef) {
+        if (!op.getAlsoAppliesToFormats().isEmpty()) {
+            return op.appliesTo(fieldDef.getJsonSchemaType(), fieldDef.getJsonSchemaFormat());
+        }
+        return op.getApplicableTypes().isEmpty() || op.getApplicableTypes().contains(fieldDef.getJsonSchemaType());
     }
 
     private static void validateAny(AnyFilter a, OperatorRegistry ops, List<FilterViolation> violations) {
