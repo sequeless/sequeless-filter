@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.5](https://github.com/sequeless/sequeless-filter/compare/filter-core-v0.1.4...filter-core-v0.1.5) (2026-11-26)
+
+
+### Features
+
+* **filter:** comparisons apply to date and date-time strings ([763b200](https://github.com/sequeless/sequeless-filter/commit/763b200c6ec074eceb118f7ff9379ba0d0c2f7ae))
+
+
+### Bug Fixes
+
+* **filter:** keep the existing applicability rule; add a comparison-only route ([f21ba3d](https://github.com/sequeless/sequeless-filter/commit/f21ba3d1b54dd2c545cf3a2805c2a8e05db56768))
+* **filter:** the validator keeps the type-only check for existing operators ([7f3923e](https://github.com/sequeless/sequeless-filter/commit/7f3923e59c9d179884a4ad90cc866086772560bb))
+
 ## [0.1.4](https://github.com/sequeless/sequeless-filter/compare/filter-core-v0.1.3...filter-core-v0.1.4) (2026-11-10)
 
 

@@ -3,6 +3,9 @@
 * The following workspace dependencies were updated
     * org.sequeless:filter-core bumped to 0.1.2
 
+* The following workspace dependencies were updated
+    * org.sequeless:filter-core bumped to 0.1.5
+
 ## [0.1.5](https://github.com/sequeless/sequeless-filter/compare/filter-sql-adapter-v0.1.4...filter-sql-adapter-v0.1.5) (2026-11-10)
 
 
