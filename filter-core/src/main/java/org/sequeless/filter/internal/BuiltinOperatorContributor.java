@@ -49,7 +49,7 @@ public class BuiltinOperatorContributor implements OperatorContributor {
                 .canonicalName(canonical)
                 .aliases(aliases)
                 .applicableTypes(NUMBER_TYPE)
-                .applicableFormats(DATE_FORMATS)
+                .alsoAppliesToFormats(DATE_FORMATS)
                 .syntax(Syntax.INFIX)
                 .build();
     }

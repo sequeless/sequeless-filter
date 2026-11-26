@@ -30,7 +30,7 @@ public interface OperatorRegistry {
      * Returns operators applicable to the given JSON Schema type and optional format.
      *
      * @param jsonSchemaType  e.g. {@code "string"}, {@code "number"}
-     * @param jsonSchemaFormat e.g. {@code "date-time"}, or {@code null} for any format
+     * @param jsonSchemaFormat e.g. {@code "date-time"}, or {@code null} when the field has no format
      */
     List<OperatorDefinition> applicableTo(String jsonSchemaType, String jsonSchemaFormat);
 

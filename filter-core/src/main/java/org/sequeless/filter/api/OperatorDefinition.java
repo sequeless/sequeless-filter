@@ -22,14 +22,23 @@ public class OperatorDefinition {
     List<String> aliases = List.of();
 
     /** JSON Schema type strings (e.g. {@code "string"}, {@code "number"}) this operator applies to.
-     *  Empty means applicable to all types. */
+     *  Empty means applicable to all types. A field must match this list AND {@link #applicableFormats}
+     *  (see {@link #appliesTo}), unless {@link #alsoAppliesToFormats} gives it an extra route. */
     @Builder.Default
     List<String> applicableTypes = List.of();
 
     /** JSON Schema format strings (e.g. {@code "date-time"}) this operator applies to.
-     *  Empty means all formats. */
+     *  Empty means all formats. A non-empty list never matches a field with no format. A field must
+     *  match this list AND {@link #applicableTypes}, unless {@link #alsoAppliesToFormats} gives it an
+     *  extra route. */
     @Builder.Default
     List<String> applicableFormats = List.of();
+
+    /** Formats that give an extra route to applicability, for these operators only: a field whose
+     *  format is listed here is applicable even when its type is not in {@link #applicableTypes}.
+     *  Empty means no extra route. */
+    @Builder.Default
+    List<String> alsoAppliesToFormats = List.of();
 
     Syntax syntax;
 
@@ -75,29 +84,25 @@ public class OperatorDefinition {
      * <p>This is the single applicability rule. {@link FilterValidator} and
      * {@link OperatorRegistry#applicableTo(String, String)} both call it, so they cannot diverge.
      *
-     * <ul>
-     *   <li>When {@code applicableTypes} or {@code applicableFormats} is empty (or both are), the
-     *       operator applies when every non-empty list contains the matching value. An empty list
-     *       matches everything. A {@code null} format matches only an empty {@code applicableFormats}.
-     *       A formats-only operator is therefore listed only for fields whose format it names.</li>
-     *   <li>When both lists are non-empty, the operator applies when {@code applicableTypes} contains
-     *       the type <em>or</em> {@code applicableFormats} contains the format. The format is an
-     *       additional route, so a field whose type is not listed still matches on its format.
-     *       The comparison operators use this rule: they apply to numbers and integers, and also
-     *       to {@code date} and {@code date-time} strings.</li>
-     * </ul>
+     * <p>The base rule is AND: the type must be in {@code applicableTypes} (or the list is empty), and
+     * the format must be in {@code applicableFormats} (or the list is empty). A {@code null} format
+     * never matches a non-empty {@code applicableFormats}. Every operator uses this rule.
+     *
+     * <p>{@code alsoAppliesToFormats} adds one extra route, used only by the ordering comparisons: a
+     * field whose format is listed there applies even when its type is not in {@code applicableTypes}.
+     * Operators with an empty {@code alsoAppliesToFormats} get no extra route. A {@code null} format
+     * never takes the extra route.
      *
      * <p>{@link FilterValidator} checks the type only for operators whose {@code applicableTypes} is
-     * non-empty, so formats-only operators still ignore the field format during validation.
+     * non-empty or whose {@code alsoAppliesToFormats} is non-empty. Formats-only operators therefore
+     * still ignore the field format during validation.
      */
     public boolean appliesTo(String jsonSchemaType, String jsonSchemaFormat) {
         boolean typeMatches = applicableTypes.isEmpty() || applicableTypes.contains(jsonSchemaType);
         boolean formatMatches = applicableFormats.isEmpty()
                 || (jsonSchemaFormat != null && applicableFormats.contains(jsonSchemaFormat));
-        if (applicableTypes.isEmpty() || applicableFormats.isEmpty()) {
-            return typeMatches && formatMatches;
-        }
-        return typeMatches || formatMatches;
+        boolean oldAnd = typeMatches && formatMatches;
+        return oldAnd || (jsonSchemaFormat != null && alsoAppliesToFormats.contains(jsonSchemaFormat));
     }
 
     /** Defensive-copy overrides for the Lombok-generated builder setters. */
@@ -118,6 +123,12 @@ public class OperatorDefinition {
         public OperatorDefinitionBuilder applicableFormats(List<String> applicableFormats) {
             this.applicableFormats$value = List.copyOf(applicableFormats);
             this.applicableFormats$set = true;
+            return this;
+        }
+
+        public OperatorDefinitionBuilder alsoAppliesToFormats(List<String> alsoAppliesToFormats) {
+            this.alsoAppliesToFormats$value = List.copyOf(alsoAppliesToFormats);
+            this.alsoAppliesToFormats$set = true;
             return this;
         }
 
