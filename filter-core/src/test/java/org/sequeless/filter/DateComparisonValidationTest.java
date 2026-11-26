@@ -105,4 +105,22 @@ class DateComparisonValidationTest {
         assertThat(FilterValidator.validate(filter, customOps, fieldRegistry("string", null)))
                 .isEmpty();
     }
+
+    @Test
+    void typedOperatorWithFormatIsCheckedAgainstFormatInValidator() {
+        OperatorDefinition withinLast = OperatorDefinition.builder()
+                .canonicalName("withinLast")
+                .syntax(Syntax.INFIX)
+                .applicableTypes(List.of("string"))
+                .applicableFormats(List.of("date-time"))
+                .build();
+        OperatorContributor custom = () -> List.of(withinLast);
+        OperatorRegistry customOps = OperatorRegistry.of(List.of(custom));
+        FieldFilter filter = Filters.field("when", "withinLast", TextNode.valueOf("x"));
+
+        assertThat(FilterValidator.validate(filter, customOps, fieldRegistry("string", "date-time")))
+                .isEmpty();
+        assertThat(FilterValidator.validate(filter, customOps, fieldRegistry("string", null)))
+                .hasSize(1);
+    }
 }
