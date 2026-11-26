@@ -69,6 +69,37 @@ public class OperatorDefinition {
         return ValueShape.SCALAR;
     }
 
+    /**
+     * Whether this operator applies to a field with the given JSON Schema type and format.
+     *
+     * <p>This is the single applicability rule. {@link FilterValidator} and
+     * {@link OperatorRegistry#applicableTo(String, String)} both call it, so they cannot diverge.
+     *
+     * <ul>
+     *   <li>When {@code applicableTypes} or {@code applicableFormats} is empty (or both are), the
+     *       operator applies when every non-empty list contains the matching value. An empty list
+     *       matches everything. A {@code null} format matches only an empty {@code applicableFormats}.
+     *       A formats-only operator is therefore listed only for fields whose format it names.</li>
+     *   <li>When both lists are non-empty, the operator applies when {@code applicableTypes} contains
+     *       the type <em>or</em> {@code applicableFormats} contains the format. The format is an
+     *       additional route, so a field whose type is not listed still matches on its format.
+     *       The comparison operators use this rule: they apply to numbers and integers, and also
+     *       to {@code date} and {@code date-time} strings.</li>
+     * </ul>
+     *
+     * <p>{@link FilterValidator} checks the type only for operators whose {@code applicableTypes} is
+     * non-empty, so formats-only operators still ignore the field format during validation.
+     */
+    public boolean appliesTo(String jsonSchemaType, String jsonSchemaFormat) {
+        boolean typeMatches = applicableTypes.isEmpty() || applicableTypes.contains(jsonSchemaType);
+        boolean formatMatches = applicableFormats.isEmpty()
+                || (jsonSchemaFormat != null && applicableFormats.contains(jsonSchemaFormat));
+        if (applicableTypes.isEmpty() || applicableFormats.isEmpty()) {
+            return typeMatches && formatMatches;
+        }
+        return typeMatches || formatMatches;
+    }
+
     /** Defensive-copy overrides for the Lombok-generated builder setters. */
     public static class OperatorDefinitionBuilder {
 

@@ -11,16 +11,17 @@ public class BuiltinOperatorContributor implements OperatorContributor {
     private static final List<String> ALL_TYPES = List.of();
     private static final List<String> NUMBER_TYPE = List.of("number", "integer");
     private static final List<String> STRING_TYPE = List.of("string");
+    private static final List<String> DATE_FORMATS = List.of("date", "date-time");
 
     @Override
     public List<OperatorDefinition> operators() {
         return List.of(
                 op("is", List.of("=", "equals", "is equal to", "equal to", "is null", "is not null"), ALL_TYPES),
                 op("is not", List.of("!=", "not equals", "is not equal to"), ALL_TYPES),
-                op("is greater than", List.of(">", "gt"), NUMBER_TYPE),
-                op("is greater than or equal to", List.of(">=", "gte"), NUMBER_TYPE),
-                op("is less than", List.of("<", "lt"), NUMBER_TYPE),
-                op("is less than or equal to", List.of("<=", "lte"), NUMBER_TYPE),
+                comparisonOp("is greater than", List.of(">", "gt")),
+                comparisonOp("is greater than or equal to", List.of(">=", "gte")),
+                comparisonOp("is less than", List.of("<", "lt")),
+                comparisonOp("is less than or equal to", List.of("<=", "lte")),
                 op("contains", List.of(), STRING_TYPE),
                 op("starts with", List.of("starts_with"), STRING_TYPE),
                 op("is like", List.of("like"), STRING_TYPE),
@@ -35,6 +36,20 @@ public class BuiltinOperatorContributor implements OperatorContributor {
                 .canonicalName(canonical)
                 .aliases(aliases)
                 .applicableTypes(types)
+                .syntax(Syntax.INFIX)
+                .build();
+    }
+
+    /**
+     * Ordering comparisons apply to numbers and integers, and also to {@code date} and {@code date-time}
+     * strings, so that date-range filters on DATE and DATETIME fields validate.
+     */
+    private static OperatorDefinition comparisonOp(String canonical, List<String> aliases) {
+        return OperatorDefinition.builder()
+                .canonicalName(canonical)
+                .aliases(aliases)
+                .applicableTypes(NUMBER_TYPE)
+                .applicableFormats(DATE_FORMATS)
                 .syntax(Syntax.INFIX)
                 .build();
     }

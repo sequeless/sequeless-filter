@@ -52,17 +52,7 @@ public final class DefaultOperatorRegistry implements OperatorRegistry {
     @Override
     public List<OperatorDefinition> applicableTo(String jsonSchemaType, String jsonSchemaFormat) {
         return ordered.stream()
-                .filter(op -> typeMatches(op, jsonSchemaType) && formatMatches(op, jsonSchemaFormat))
+                .filter(op -> op.appliesTo(jsonSchemaType, jsonSchemaFormat))
                 .toList();
-    }
-
-    private static boolean typeMatches(OperatorDefinition op, String type) {
-        return op.getApplicableTypes().isEmpty() || op.getApplicableTypes().contains(type);
-    }
-
-    private static boolean formatMatches(OperatorDefinition op, String format) {
-        if (op.getApplicableFormats().isEmpty()) return true;
-        if (format == null) return false;
-        return op.getApplicableFormats().contains(format);
     }
 }
