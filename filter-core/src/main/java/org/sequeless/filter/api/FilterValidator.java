@@ -54,7 +54,9 @@ public final class FilterValidator {
         checkValueShape(f.path(), f.op(), op, f.value(), violations);
 
         fields.find(f.path()).ifPresent(fieldDef -> {
-            if (!op.getApplicableTypes().isEmpty() && !op.getApplicableTypes().contains(fieldDef.getJsonSchemaType())) {
+            // Operators with no applicableTypes are not checked here, so their formats are ignored too.
+            if (!op.getApplicableTypes().isEmpty()
+                    && !op.appliesTo(fieldDef.getJsonSchemaType(), fieldDef.getJsonSchemaFormat())) {
                 violations.add(new FilterViolation(
                         f.path(),
                         "Operator '" + f.op() + "' is not applicable to type '" + fieldDef.getJsonSchemaType() + "'"));

@@ -45,10 +45,10 @@ all types):
 | --- | --- | --- | --- |
 | `is` | `=`, `equals`, `is equal to`, `equal to`, `is null`, `is not null` | all | binary |
 | `is not` | `!=`, `not equals`, `is not equal to` | all | binary |
-| `is greater than` | `>`, `gt` | number/integer | binary |
-| `is greater than or equal to` | `>=`, `gte` | number/integer | binary |
-| `is less than` | `<`, `lt` | number/integer | binary |
-| `is less than or equal to` | `<=`, `lte` | number/integer | binary |
+| `is greater than` | `>`, `gt` | number/integer; string with format `date` or `date-time` | binary |
+| `is greater than or equal to` | `>=`, `gte` | number/integer; string with format `date` or `date-time` | binary |
+| `is less than` | `<`, `lt` | number/integer; string with format `date` or `date-time` | binary |
+| `is less than or equal to` | `<=`, `lte` | number/integer; string with format `date` or `date-time` | binary |
 | `contains` | — | string | binary |
 | `starts with` | `starts_with` | string | binary |
 | `is like` | `like` | string | binary |
