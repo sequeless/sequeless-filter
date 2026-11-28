@@ -6,6 +6,19 @@
 * The following workspace dependencies were updated
     * org.sequeless:filter-core bumped to 0.1.5
 
+## [0.1.8](https://github.com/sequeless/sequeless-filter/compare/filter-sql-adapter-v0.1.7...filter-sql-adapter-v0.1.8) (2026-11-28)
+
+
+### Bug Fixes
+
+* **filter:** is not null resolves to is not, not is ([0beae28](https://github.com/sequeless/sequeless-filter/commit/0beae288da485e5338ffc53760c41f63c54abc43)), closes [#25](https://github.com/sequeless/sequeless-filter/issues/25)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+    * org.sequeless:filter-core bumped to 0.1.6
+
 ## [0.1.7](https://github.com/sequeless/sequeless-filter/compare/filter-sql-adapter-v0.1.6...filter-sql-adapter-v0.1.7) (2026-11-26)
 
 

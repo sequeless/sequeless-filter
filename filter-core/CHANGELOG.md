@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.6](https://github.com/sequeless/sequeless-filter/compare/filter-core-v0.1.5...filter-core-v0.1.6) (2026-11-28)
+
+
+### Bug Fixes
+
+* **filter:** is not null resolves to is not, not is ([0beae28](https://github.com/sequeless/sequeless-filter/commit/0beae288da485e5338ffc53760c41f63c54abc43)), closes [#25](https://github.com/sequeless/sequeless-filter/issues/25)
+* **filter:** permitted-operators check compares canonical names ([2c0143d](https://github.com/sequeless/sequeless-filter/commit/2c0143dc13fe1f2b3b0cba0c853d7a6f2259dbe8)), closes [#39](https://github.com/sequeless/sequeless-filter/issues/39)
+
 ## [0.1.5](https://github.com/sequeless/sequeless-filter/compare/filter-core-v0.1.4...filter-core-v0.1.5) (2026-11-26)
 
 
