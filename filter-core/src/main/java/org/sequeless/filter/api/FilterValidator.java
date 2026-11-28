@@ -60,11 +60,24 @@ public final class FilterValidator {
                         "Operator '" + f.op() + "' is not applicable to type '" + fieldDef.getJsonSchemaType() + "'"));
             }
             if (!fieldDef.getPermittedOperators().isEmpty()
-                    && !fieldDef.getPermittedOperators().contains(f.op())) {
+                    && !isPermitted(op, fieldDef.getPermittedOperators(), ops)) {
                 violations.add(new FilterViolation(
                         f.path(), "Operator '" + f.op() + "' is not permitted for field '" + f.path() + "'"));
             }
         });
+    }
+
+    /**
+     * Compares canonical names, so an alias on either side resolves to the same operator: {@code gte} matches an
+     * allowlist entry {@code is greater than or equal to}, and an allowlist entry written as an alias still matches.
+     * An entry the registry does not know is compared as written.
+     */
+    private static boolean isPermitted(OperatorDefinition op, List<String> permitted, OperatorRegistry ops) {
+        return permitted.stream()
+                .map(entry -> ops.findByCanonicalOrAlias(entry)
+                        .map(OperatorDefinition::getCanonicalName)
+                        .orElse(entry))
+                .anyMatch(op.getCanonicalName()::equals);
     }
 
     /**

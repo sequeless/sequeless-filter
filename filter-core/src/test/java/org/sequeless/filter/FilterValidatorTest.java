@@ -91,6 +91,47 @@ class FilterValidatorTest {
     }
 
     @Test
+    void aliasOfPermittedOperatorIsAccepted() {
+        // 'restricted' permits the canonical 'is'; the alias '=' names the same operator.
+        FieldFilter filter = Filters.field("restricted", "=", TextNode.valueOf("x"));
+        assertThat(FilterValidator.validate(filter, ops, fields)).isEmpty();
+    }
+
+    @Test
+    void aliasOfNonPermittedOperatorIsStillRejected() {
+        FieldFilter filter = Filters.field("restricted", "!=", TextNode.valueOf("x"));
+        List<FilterViolation> violations = FilterValidator.validate(filter, ops, fields);
+        assertThat(violations).hasSize(1);
+        assertThat(violations.get(0).message()).contains("is not permitted");
+    }
+
+    @Test
+    void aliasOfCanonicalOperatorMatchesCanonicalAllowlistEntry() {
+        FieldRegistry ranged = FieldRegistry.of(FieldRegistrySpec.builder()
+                .fields(List.of(FieldDefinition.builder()
+                        .path("age")
+                        .jsonSchemaType("number")
+                        .permittedOperators(List.of("is greater than or equal to"))
+                        .build()))
+                .build());
+        FieldFilter filter = Filters.field("age", "gte", JSON.numberNode(18));
+        assertThat(FilterValidator.validate(filter, ops, ranged)).isEmpty();
+    }
+
+    @Test
+    void aliasEntryInAllowlistMatchesCanonicalOperator() {
+        FieldRegistry ranged = FieldRegistry.of(FieldRegistrySpec.builder()
+                .fields(List.of(FieldDefinition.builder()
+                        .path("age")
+                        .jsonSchemaType("number")
+                        .permittedOperators(List.of("gte"))
+                        .build()))
+                .build());
+        FieldFilter filter = Filters.field("age", "is greater than or equal to", JSON.numberNode(18));
+        assertThat(FilterValidator.validate(filter, ops, ranged)).isEmpty();
+    }
+
+    @Test
     void isWithNullValueIsValid() {
         FieldFilter filter = Filters.field("deletedAt", "is", NullNode.getInstance());
         assertThat(FilterValidator.validate(filter, ops, fields)).isEmpty();
