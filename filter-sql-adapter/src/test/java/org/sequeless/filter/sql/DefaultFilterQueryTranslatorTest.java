@@ -107,6 +107,21 @@ class DefaultFilterQueryTranslatorTest {
     }
 
     @Test
+    void apiIsNotNullAliasRendersIsNotNull() {
+        // Regression: 'is not null' is an alias of 'is not', so a NULL value must not render IS NULL.
+        SqlFragment f = translate(Filters.field("status", "is not null", JsonNodeFactory.instance.nullNode()));
+        assertThat(f.sql()).isEqualTo("\"status\" IS NOT NULL");
+        assertThat(f.parameters()).isEmpty();
+    }
+
+    @Test
+    void apiIsNullAliasRendersIsNull() {
+        SqlFragment f = translate(Filters.field("status", "is null", JsonNodeFactory.instance.nullNode()));
+        assertThat(f.sql()).isEqualTo("\"status\" IS NULL");
+        assertThat(f.parameters()).isEmpty();
+    }
+
+    @Test
     void translatesIsGreaterThan() {
         SqlFragment f = translate(Filters.field("age", "is greater than", JsonNodeFactory.instance.numberNode(21)));
         assertThat(f.sql()).isEqualTo("\"age\" > ?");

@@ -43,8 +43,8 @@ all types):
 
 | Canonical | Aliases | Applies to | Arity |
 | --- | --- | --- | --- |
-| `is` | `=`, `equals`, `is equal to`, `equal to`, `is null`, `is not null` | all | binary |
-| `is not` | `!=`, `not equals`, `is not equal to` | all | binary |
+| `is` | `=`, `equals`, `is equal to`, `equal to`, `is null` | all | binary |
+| `is not` | `!=`, `not equals`, `is not equal to`, `is not null` | all | binary |
 | `is greater than` | `>`, `gt` | number/integer; string with format `date` or `date-time` | binary |
 | `is greater than or equal to` | `>=`, `gte` | number/integer; string with format `date` or `date-time` | binary |
 | `is less than` | `<`, `lt` | number/integer; string with format `date` or `date-time` | binary |

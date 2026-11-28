@@ -158,6 +158,15 @@ class FilterParserTest {
     }
 
     @Test
+    void parsesIsNotNullAsIsNotWithNullValue() {
+        FilterNode node = parse("deletedAt is not null");
+        assertThat(node).isInstanceOfSatisfying(FieldFilter.class, f -> {
+            assertThat(f.op()).isEqualTo("is not");
+            assertThat(f.value().isNull()).isTrue();
+        });
+    }
+
+    @Test
     void parsesBooleanValue() {
         FilterNode node = parse("active is true");
         assertThat(node)

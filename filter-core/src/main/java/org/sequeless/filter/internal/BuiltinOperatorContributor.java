@@ -16,8 +16,8 @@ public class BuiltinOperatorContributor implements OperatorContributor {
     @Override
     public List<OperatorDefinition> operators() {
         return List.of(
-                op("is", List.of("=", "equals", "is equal to", "equal to", "is null", "is not null"), ALL_TYPES),
-                op("is not", List.of("!=", "not equals", "is not equal to"), ALL_TYPES),
+                op("is", List.of("=", "equals", "is equal to", "equal to", "is null"), ALL_TYPES),
+                op("is not", List.of("!=", "not equals", "is not equal to", "is not null"), ALL_TYPES),
                 comparisonOp("is greater than", List.of(">", "gt")),
                 comparisonOp("is greater than or equal to", List.of(">=", "gte")),
                 comparisonOp("is less than", List.of("<", "lt")),
