@@ -4,6 +4,10 @@
     * org.sequeless:filter-core bumped to 0.1.5,
     * org.sequeless:filter-sql-adapter bumped to 0.1.6
 
+* The following workspace dependencies were updated
+    * org.sequeless:filter-core bumped to 0.1.6,
+    * org.sequeless:filter-sql-adapter bumped to 0.1.8
+
 ## [0.1.3](https://github.com/sequeless/sequeless-filter/compare/filter-sql-testkit-v0.1.2...filter-sql-testkit-v0.1.3) (2026-11-26)
 
 
